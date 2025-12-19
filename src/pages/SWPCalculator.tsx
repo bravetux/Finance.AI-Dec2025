@@ -2,57 +2,96 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Calculator } from "lucide-react";
+import CalculatorInput from "@/components/CalculatorInput";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+type Frequency = "monthly" | "annual";
+type WithdrawalType = "rupees" | "percentage";
 
 const SWPCalculator: React.FC = () => {
-  const [totalInvestment, setTotalInvestment] = useState(500000);
-  const [monthlyWithdrawal, setMonthlyWithdrawal] = useState(10000);
+  // State for SWP Calculator
+  const [initialInvestment, setInitialInvestment] = useState(5000000);
   const [returnRate, setReturnRate] = useState(8);
-  const [timePeriod, setTimePeriod] = useState(5);
+  const [timePeriod, setTimePeriod] = useState(15);
+  const [withdrawalAmount, setWithdrawalAmount] = useState(30000);
+  const [withdrawalFrequency, setWithdrawalFrequency] = useState<Frequency>("monthly");
+  const [withdrawalType, setWithdrawalType] = useState<WithdrawalType>("rupees");
+
+  // --- Calculation Logic ---
 
   const calculations = useMemo(() => {
-    let currentBalance = totalInvestment;
-    const monthlyReturnRate = returnRate / 12 / 100;
-    const numberOfMonths = timePeriod * 12;
+    const P = initialInvestment;
+    const r_annual = returnRate / 100;
+    const t_years = timePeriod;
+    const w_value = withdrawalAmount;
+    const w_type = withdrawalType;
+    const w_frequency = withdrawalFrequency;
 
-    if (totalInvestment <= 0 || numberOfMonths <= 0) {
-      return {
-        totalInvestment: totalInvestment,
-        totalWithdrawal: 0,
-        finalValue: totalInvestment,
-      };
-    }
+    const periodsPerYear = w_frequency === "monthly" ? 12 : 1;
+    const r_period = r_annual / periodsPerYear;
+    const totalPeriods = t_years * periodsPerYear;
 
-    for (let i = 0; i < numberOfMonths; i++) {
-      currentBalance += currentBalance * monthlyReturnRate; // Add interest
-      currentBalance -= monthlyWithdrawal; // Subtract withdrawal
-      if (currentBalance < 0) {
-        currentBalance = 0;
-        break;
+    let currentBalance = P;
+    let totalWithdrawn = 0;
+    let totalReturns = 0;
+
+    for (let period = 1; period <= totalPeriods; period++) {
+      // 1. Calculate Withdrawal Amount
+      let withdrawal;
+      if (w_type === "rupees") {
+        withdrawal = w_value;
+      } else { // percentage
+        // Withdrawal is a percentage of the current balance
+        withdrawal = currentBalance * (w_value / 100);
       }
+      
+      // Ensure withdrawal doesn't exceed balance
+      withdrawal = Math.min(withdrawal, currentBalance);
+
+      // 2. Apply Withdrawal
+      currentBalance -= withdrawal;
+      totalWithdrawn += withdrawal;
+
+      // 3. Apply Returns (compounded on the remaining balance)
+      const returnsThisPeriod = currentBalance * r_period;
+      currentBalance += returnsThisPeriod;
+      totalReturns += returnsThisPeriod;
     }
 
-    const totalWithdrawal = monthlyWithdrawal * numberOfMonths;
+    const finalCorpus = currentBalance;
+    const totalInvestment = P; // For SWP, initial investment is the total investment
 
     return {
-      totalInvestment: totalInvestment,
-      totalWithdrawal: totalWithdrawal,
-      finalValue: currentBalance,
+      totalInvestment,
+      totalWithdrawn,
+      finalCorpus,
+      totalReturns,
     };
-  }, [totalInvestment, monthlyWithdrawal, returnRate, timePeriod]);
+  }, [initialInvestment, returnRate, timePeriod, withdrawalAmount, withdrawalFrequency, withdrawalType]);
 
-  const withdrawalRate = useMemo(() => {
-    if (totalInvestment === 0) {
-      return 0;
-    }
-    const annualWithdrawal = monthlyWithdrawal * 12;
-    return (annualWithdrawal / totalInvestment) * 100;
-  }, [totalInvestment, monthlyWithdrawal]);
+  // --- Chart Data and Formatting ---
+
+  const chartData = [
+    { name: "Total Withdrawn", value: calculations.totalWithdrawn },
+    { name: "Final Corpus", value: calculations.finalCorpus },
+  ];
+
+  const COLORS = ["#4F46E5", "#E0E7FF"];
 
   const formatCurrency = (value: number) => {
     return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
   };
+
+  // --- Component Render ---
 
   return (
     <div className="space-y-6">
@@ -62,87 +101,130 @@ const SWPCalculator: React.FC = () => {
       </h1>
 
       <Card>
-        <CardContent className="pt-6 grid md:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="font-medium">Total investment</label>
-                <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                  {formatCurrency(totalInvestment)}
-                </span>
-              </div>
-              <Slider
-                value={[totalInvestment]}
-                onValueChange={(val) => setTotalInvestment(val[0])}
+        <CardContent className="pt-6">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              <CalculatorInput
+                label="Initial Investment (Corpus)"
+                value={initialInvestment}
+                onChange={setInitialInvestment}
                 min={100000}
-                max={1000000000}
+                max={100000000}
                 step={100000}
+                isCurrency
               />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="font-medium">Withdrawal per month</label>
-                <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                  {formatCurrency(monthlyWithdrawal)}
-                </span>
-              </div>
-              <Slider
-                value={[monthlyWithdrawal]}
-                onValueChange={(val) => setMonthlyWithdrawal(val[0])}
-                min={1000}
-                max={10000000}
-                step={1000}
-              />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="font-medium">Expected return rate (p.a)</label>
-                <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                  {returnRate}%
-                </span>
-              </div>
-              <Slider
-                value={[returnRate]}
-                onValueChange={(val) => setReturnRate(val[0])}
+              <CalculatorInput
+                label="Expected Return Rate (p.a)"
+                value={returnRate}
+                onChange={setReturnRate}
                 min={1}
-                max={20}
+                max={30}
                 step={0.5}
+                unit="%"
               />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="font-medium">Time period</label>
-                <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                  {timePeriod} Yr
-                </span>
-              </div>
-              <Slider
-                value={[timePeriod]}
-                onValueChange={(val) => setTimePeriod(val[0])}
+              <CalculatorInput
+                label="Time Period"
+                value={timePeriod}
+                onChange={setTimePeriod}
                 min={1}
                 max={40}
                 step={1}
+                unit=" Yr"
               />
+              
+              {/* Withdrawal Options */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <CalculatorInput
+                    label={`Withdrawal (${withdrawalFrequency === "monthly" ? "Per Month" : "Per Year"})`}
+                    value={withdrawalAmount}
+                    onChange={setWithdrawalAmount}
+                    min={0}
+                    max={withdrawalType === "percentage" ? 100 : 500000}
+                    step={withdrawalType === "percentage" ? 0.1 : 100}
+                    isCurrency={withdrawalType === "rupees"}
+                    unit={withdrawalType === "percentage" ? "%" : undefined}
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Label className="font-medium block mb-2">Type</Label>
+                  <Select
+                    value={withdrawalType}
+                    onValueChange={(value) => setWithdrawalType(value as WithdrawalType)}
+                  >
+                    <SelectTrigger className="text-lg h-12">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rupees">Rupees</SelectItem>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-3">
+                  <Label className="font-medium block mb-2">Withdrawal Frequency</Label>
+                  <Select
+                    value={withdrawalFrequency}
+                    onValueChange={(value) => setWithdrawalFrequency(value as Frequency)}
+                  >
+                    <SelectTrigger className="text-lg h-12">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col justify-center items-center bg-muted/50 rounded-lg p-8">
-            <div className="w-full max-w-sm space-y-4 text-lg">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total investment</span>
-                <span className="font-medium">{formatCurrency(calculations.totalInvestment)}</span>
+            
+            {/* Results and Chart */}
+            <div className="flex flex-col items-center">
+              <div className="w-full max-w-sm space-y-4 text-lg">
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-bold">Initial Investment</span>
+                  <span className="font-bold text-xl text-indigo-600">
+                    {formatCurrency(calculations.totalInvestment)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Returns Earned</span>
+                  <span className="font-medium">{formatCurrency(calculations.totalReturns)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Amount Withdrawn</span>
+                  <span className="font-medium">{formatCurrency(calculations.totalWithdrawn)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-4 mt-4">
+                  <span className="font-bold">Final Corpus Value</span>
+                  <span className="font-bold text-xl text-green-600">
+                    {formatCurrency(calculations.finalCorpus)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total withdrawal</span>
-                <span className="font-medium">{formatCurrency(calculations.totalWithdrawal)}</span>
-              </div>
-              <div className="flex justify-between border-t pt-4 mt-4">
-                <span className="font-bold">Final value</span>
-                <span className="font-bold text-2xl text-primary">{formatCurrency(calculations.finalValue)}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-muted-foreground">Withdrawal Rate (p.a.)</span>
-                <span className="font-medium">{withdrawalRate.toFixed(2)}%</span>
-              </div>
+
+              <ResponsiveContainer width="100%" height={250} className="mt-8">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </CardContent>

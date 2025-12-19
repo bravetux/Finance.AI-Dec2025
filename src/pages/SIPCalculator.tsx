@@ -2,10 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { Calculator } from "lucide-react";
+import CalculatorInput from "@/components/CalculatorInput";
 
 const SIPCalculator: React.FC = () => {
   // State for SIP Calculator
@@ -115,29 +115,33 @@ const SIPCalculator: React.FC = () => {
             <TabsContent value="sip">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Monthly investment</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(monthlyInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[monthlyInvestment]} onValueChange={(val) => setMonthlyInvestment(val[0])} min={500} max={50000000} step={500} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{sipReturnRate}%</span>
-                    </div>
-                    <Slider value={[sipReturnRate]} onValueChange={(val) => setSipReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{sipTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[sipTimePeriod]} onValueChange={(val) => setSipTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
+                  <CalculatorInput
+                    label="Monthly investment"
+                    value={monthlyInvestment}
+                    onChange={setMonthlyInvestment}
+                    min={500}
+                    max={50000000}
+                    step={500}
+                    isCurrency
+                  />
+                  <CalculatorInput
+                    label="Expected return rate (p.a)"
+                    value={sipReturnRate}
+                    onChange={setSipReturnRate}
+                    min={1}
+                    max={30}
+                    step={0.5}
+                    unit="%"
+                  />
+                  <CalculatorInput
+                    label="Time period"
+                    value={sipTimePeriod}
+                    onChange={setSipTimePeriod}
+                    min={1}
+                    max={40}
+                    step={1}
+                    unit=" Yr"
+                  />
                 </div>
                 <div className="flex flex-col items-center">
                   <ResponsiveContainer width="100%" height={200}>
@@ -161,29 +165,33 @@ const SIPCalculator: React.FC = () => {
             <TabsContent value="lumpsum">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Total investment</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(lumpsumInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[lumpsumInvestment]} onValueChange={(val) => setLumpsumInvestment(val[0])} min={10000} max={100000000} step={10000} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{lumpsumReturnRate}%</span>
-                    </div>
-                    <Slider value={[lumpsumReturnRate]} onValueChange={(val) => setLumpsumReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{lumpsumTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[lumpsumTimePeriod]} onValueChange={(val) => setLumpsumTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
+                  <CalculatorInput
+                    label="Total investment"
+                    value={lumpsumInvestment}
+                    onChange={setLumpsumInvestment}
+                    min={10000}
+                    max={100000000}
+                    step={10000}
+                    isCurrency
+                  />
+                  <CalculatorInput
+                    label="Expected return rate (p.a)"
+                    value={lumpsumReturnRate}
+                    onChange={setLumpsumReturnRate}
+                    min={1}
+                    max={30}
+                    step={0.5}
+                    unit="%"
+                  />
+                  <CalculatorInput
+                    label="Time period"
+                    value={lumpsumTimePeriod}
+                    onChange={setLumpsumTimePeriod}
+                    min={1}
+                    max={40}
+                    step={1}
+                    unit=" Yr"
+                  />
                 </div>
                 <div className="flex flex-col items-center">
                   <ResponsiveContainer width="100%" height={200}>
@@ -207,38 +215,42 @@ const SIPCalculator: React.FC = () => {
             <TabsContent value="combo">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Initial Lumpsum</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(comboLumpsum)}
-                      </span>
-                    </div>
-                    <Slider value={[comboLumpsum]} onValueChange={(val) => setComboLumpsum(val[0])} min={0} max={5000000} step={10000} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Monthly Investment (SIP)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(comboMonthlyInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[comboMonthlyInvestment]} onValueChange={(val) => setComboMonthlyInvestment(val[0])} min={0} max={500000} step={500} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{comboReturnRate}%</span>
-                    </div>
-                    <Slider value={[comboReturnRate]} onValueChange={(val) => setComboReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{comboTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[comboTimePeriod]} onValueChange={(val) => setComboTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
+                  <CalculatorInput
+                    label="Initial Lumpsum"
+                    value={comboLumpsum}
+                    onChange={setComboLumpsum}
+                    min={0}
+                    max={5000000}
+                    step={10000}
+                    isCurrency
+                  />
+                  <CalculatorInput
+                    label="Monthly Investment (SIP)"
+                    value={comboMonthlyInvestment}
+                    onChange={setComboMonthlyInvestment}
+                    min={0}
+                    max={500000}
+                    step={500}
+                    isCurrency
+                  />
+                  <CalculatorInput
+                    label="Expected return rate (p.a)"
+                    value={comboReturnRate}
+                    onChange={setComboReturnRate}
+                    min={1}
+                    max={30}
+                    step={0.5}
+                    unit="%"
+                  />
+                  <CalculatorInput
+                    label="Time period"
+                    value={comboTimePeriod}
+                    onChange={setComboTimePeriod}
+                    min={1}
+                    max={40}
+                    step={1}
+                    unit=" Yr"
+                  />
                 </div>
                 <div className="flex flex-col items-center">
                   <ResponsiveContainer width="100%" height={200}>

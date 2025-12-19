@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 
 type Frequency = "monthly" | "annual";
+type StepUpType = "rupees" | "percentage";
 
 const SIPCalculator: React.FC = () => {
   // State for SIP Calculator
@@ -23,6 +24,8 @@ const SIPCalculator: React.FC = () => {
   const [sipReturnRate, setSipReturnRate] = useState(12);
   const [sipTimePeriod, setSipTimePeriod] = useState(10);
   const [sipFrequency, setSipFrequency] = useState<Frequency>("monthly");
+  const [sipStepUpValue, setSipStepUpValue] = useState(0); // Annual increase value
+  const [sipStepUpType, setSipStepUpType] = useState<StepUpType>("percentage");
 
   // State for Lumpsum Calculator (no change needed here)
   const [lumpsumInvestment, setLumpsumInvestment] = useState(1000000);
@@ -35,11 +38,85 @@ const SIPCalculator: React.FC = () => {
   const [comboReturnRate, setComboReturnRate] = useState(12);
   const [comboTimePeriod, setComboTimePeriod] = useState(10);
   const [comboFrequency, setComboFrequency] = useState<Frequency>("monthly");
+  const [comboStepUpValue, setComboStepUpValue] = useState(0); // Annual increase value
+  const [comboStepUpType, setComboStepUpType] = useState<StepUpType>("percentage");
+
+  // --- Calculation Logic ---
+
+  const calculateStepUpSIP = (
+    P: number, // Periodic Investment
+    r: number, // Annual Return Rate (as a decimal, e.g., 0.12)
+    t: number, // Time Period (in years)
+    f: Frequency, // Investment Frequency
+    s: number, // Step-up Value
+    s_type: StepUpType // Step-up Type
+  ) => {
+    const compoundingPeriods = f === "monthly" ? 12 : 1;
+    const i = r / compoundingPeriods; // Rate per period
+    const n_periods = t * compoundingPeriods; // Total number of periods
+    const n_years = t;
+
+    let totalValue = 0;
+    let investedAmount = 0;
+
+    // Step-up SIP calculation is done year by year
+    for (let year = 1; year <= n_years; year++) {
+      let currentInvestment = P;
+      
+      // Adjust investment for the current year based on step-up
+      if (year > 1) {
+        if (s_type === "percentage") {
+          // P is the initial investment, which is stepped up annually
+          currentInvestment = P * Math.pow(1 + s / 100, year - 1);
+        } else { // rupees
+          currentInvestment = P + s * (year - 1);
+        }
+      }
+
+      // Calculate Future Value of the current year's investment
+      // The investment is made for 'compoundingPeriods' times in this year.
+      // The total compounding periods remaining for this year's investment is:
+      // (n_years - year) * compoundingPeriods + compoundingPeriods (for the current year)
+      const remainingPeriods = (n_years - year) * compoundingPeriods + compoundingPeriods;
+
+      // Future Value of Annuity Due for the current year's investment
+      let fv_year;
+      if (i === 0) {
+        fv_year = currentInvestment * compoundingPeriods;
+      } else {
+        fv_year = currentInvestment * (((Math.pow(1 + i, compoundingPeriods) - 1) / i) * (1 + i));
+      }
+
+      // Compound the year's FV for the remaining years
+      const fv_compounded = fv_year * Math.pow(1 + r, n_years - year);
+      totalValue += fv_compounded;
+      
+      // Calculate invested amount for the current year
+      investedAmount += currentInvestment * compoundingPeriods;
+    }
+
+    const estimatedReturns = totalValue - investedAmount;
+    return { investedAmount, estimatedReturns, totalValue };
+  };
 
   const sipCalculations = useMemo(() => {
+    const r_annual = sipReturnRate / 100;
+
+    if (sipStepUpValue > 0) {
+      return calculateStepUpSIP(
+        monthlyInvestment,
+        r_annual,
+        sipTimePeriod,
+        sipFrequency,
+        sipStepUpValue,
+        sipStepUpType
+      );
+    }
+
+    // Standard SIP calculation (if no step-up)
     const P = monthlyInvestment;
     const compoundingPeriods = sipFrequency === "monthly" ? 12 : 1;
-    const i = sipReturnRate / compoundingPeriods / 100;
+    const i = r_annual / compoundingPeriods;
     const n = sipTimePeriod * compoundingPeriods;
 
     if (n <= 0) {
@@ -51,13 +128,13 @@ const SIPCalculator: React.FC = () => {
       return { investedAmount: totalValue, estimatedReturns: 0, totalValue };
     }
 
-    // Future Value of Annuity Due (investment at the start of the period)
+    // Future Value of Annuity Due
     const totalValue = P * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
     const investedAmount = P * n;
     const estimatedReturns = totalValue - investedAmount;
 
     return { investedAmount, estimatedReturns, totalValue };
-  }, [monthlyInvestment, sipReturnRate, sipTimePeriod, sipFrequency]);
+  }, [monthlyInvestment, sipReturnRate, sipTimePeriod, sipFrequency, sipStepUpValue, sipStepUpType]);
 
   const lumpsumCalculations = useMemo(() => {
     const P = lumpsumInvestment;
@@ -74,35 +151,50 @@ const SIPCalculator: React.FC = () => {
   const comboCalculations = useMemo(() => {
     const L = comboLumpsum;
     const S = comboMonthlyInvestment;
-    const compoundingPeriods = comboFrequency === "monthly" ? 12 : 1;
-    const i = comboReturnRate / compoundingPeriods / 100;
-    const n = comboTimePeriod * compoundingPeriods;
-
-    if (n <= 0) {
-      const invested = L + S * n;
-      return { investedAmount: invested, estimatedReturns: 0, totalValue: invested };
-    }
-
-    // Lumpsum part (compounded annually)
     const r_annual = comboReturnRate / 100;
     const n_years = comboTimePeriod;
+
+    // 1. Lumpsum part (compounded annually)
     const fvLumpsum = L * Math.pow(1 + r_annual, n_years);
 
-    // SIP part (compounded based on frequency)
-    let fvSip;
-    if (i === 0) {
-      fvSip = S * n;
+    // 2. SIP part (with or without step-up)
+    let sipResult;
+    if (comboStepUpValue > 0) {
+      sipResult = calculateStepUpSIP(
+        S,
+        r_annual,
+        n_years,
+        comboFrequency,
+        comboStepUpValue,
+        comboStepUpType
+      );
     } else {
-      // Future Value of Annuity Due
-      fvSip = S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+      // Standard SIP calculation
+      const compoundingPeriods = comboFrequency === "monthly" ? 12 : 1;
+      const i = r_annual / compoundingPeriods;
+      const n = n_years * compoundingPeriods;
+
+      if (n <= 0) {
+        sipResult = { investedAmount: 0, estimatedReturns: 0, totalValue: 0 };
+      } else if (i === 0) {
+        const totalValue = S * n;
+        sipResult = { investedAmount: totalValue, estimatedReturns: 0, totalValue };
+      } else {
+        // Future Value of Annuity Due
+        const totalValue = S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+        const investedAmount = S * n;
+        sipResult = { investedAmount, estimatedReturns: totalValue - investedAmount, totalValue };
+      }
     }
     
-    const totalValue = fvLumpsum + fvSip;
-    const investedAmount = L + (S * n);
+    const totalValue = fvLumpsum + sipResult.totalValue;
+    const investedAmount = L + sipResult.investedAmount;
     const estimatedReturns = totalValue - investedAmount;
 
     return { investedAmount, estimatedReturns, totalValue };
-  }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod, comboFrequency]);
+  }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod, comboFrequency, comboStepUpValue, comboStepUpType]);
+
+  // --- Chart Data and Formatting ---
 
   const sipChartData = [
     { name: "Invested amount", value: sipCalculations.investedAmount },
@@ -124,6 +216,8 @@ const SIPCalculator: React.FC = () => {
   const formatCurrency = (value: number) => {
     return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
   };
+
+  // --- Component Render ---
 
   return (
     <div className="space-y-6">
@@ -173,6 +267,34 @@ const SIPCalculator: React.FC = () => {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <CalculatorInput
+                        label={`Annual Step-up (${sipStepUpType === "percentage" ? "in %" : "in ₹"})`}
+                        value={sipStepUpValue}
+                        onChange={setSipStepUpValue}
+                        min={0}
+                        max={sipStepUpType === "percentage" ? 100 : 500000}
+                        step={sipStepUpType === "percentage" ? 0.5 : 100}
+                        isCurrency={sipStepUpType === "rupees"}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="font-medium block mb-2">Type</Label>
+                      <Select
+                        value={sipStepUpType}
+                        onValueChange={(value) => setSipStepUpType(value as StepUpType)}
+                      >
+                        <SelectTrigger className="text-lg h-12">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="rupees">Rupees</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <CalculatorInput
                     label="Expected return rate (p.a)"
                     value={sipReturnRate}
@@ -210,7 +332,7 @@ const SIPCalculator: React.FC = () => {
               </div>
             </TabsContent>
 
-            {/* Lumpsum Calculator Content */}
+            {/* Lumpsum Calculator Content (No change) */}
             <TabsContent value="lumpsum">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
@@ -297,6 +419,34 @@ const SIPCalculator: React.FC = () => {
                         <SelectContent>
                           <SelectItem value="monthly">Monthly</SelectItem>
                           <SelectItem value="annual">Annual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <CalculatorInput
+                        label={`Annual Step-up (${comboStepUpType === "percentage" ? "in %" : "in ₹"})`}
+                        value={comboStepUpValue}
+                        onChange={setComboStepUpValue}
+                        min={0}
+                        max={comboStepUpType === "percentage" ? 100 : 500000}
+                        step={comboStepUpType === "percentage" ? 0.5 : 100}
+                        isCurrency={comboStepUpType === "rupees"}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="font-medium block mb-2">Type</Label>
+                      <Select
+                        value={comboStepUpType}
+                        onValueChange={(value) => setComboStepUpType(value as StepUpType)}
+                      >
+                        <SelectTrigger className="text-lg h-12">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="rupees">Rupees</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

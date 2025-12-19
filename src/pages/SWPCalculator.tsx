@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import SWPReportTable, { SWPReportRow } from "@/components/SWPReportTable";
 
 type Frequency = "monthly" | "annual";
 type WithdrawalType = "rupees" | "percentage";
@@ -26,15 +27,24 @@ const SWPCalculator: React.FC = () => {
   const [withdrawalFrequency, setWithdrawalFrequency] = useState<Frequency>("monthly");
   const [withdrawalType, setWithdrawalType] = useState<WithdrawalType>("rupees");
 
-  // --- Calculation Logic ---
+  // --- Helper Functions ---
 
-  const calculations = useMemo(() => {
-    const P = initialInvestment;
-    const r_annual = returnRate / 100;
-    const t_years = timePeriod;
-    const w_value = withdrawalAmount;
-    const w_type = withdrawalType;
-    const w_frequency = withdrawalFrequency;
+  const formatCurrency = (value: number) => {
+    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  };
+
+  // --- Report Generation Logic ---
+
+  const generateSWPReport = (
+    P: number, // Initial Investment
+    r_annual: number, // Annual Return Rate (as a decimal)
+    t_years: number, // Time Period (in years)
+    w_value: number, // Withdrawal Value (Rupees or Percentage)
+    w_type: WithdrawalType,
+    w_frequency: Frequency
+  ) => {
+    const monthlyReport: SWPReportRow[] = [];
+    const yearlyReport: SWPReportRow[] = [];
 
     const periodsPerYear = w_frequency === "monthly" ? 12 : 1;
     const r_period = r_annual / periodsPerYear;
@@ -44,41 +54,96 @@ const SWPCalculator: React.FC = () => {
     let totalWithdrawn = 0;
     let totalReturns = 0;
 
-    for (let period = 1; period <= totalPeriods; period++) {
-      // 1. Calculate Withdrawal Amount
-      let withdrawal;
-      if (w_type === "rupees") {
-        withdrawal = w_value;
-      } else { // percentage
-        // Withdrawal is a percentage of the current balance
-        withdrawal = currentBalance * (w_value / 100);
+    for (let year = 1; year <= t_years; year++) {
+      let yearlyWithdrawn = 0;
+      let yearlyReturns = 0;
+      let yearStartBalance = currentBalance;
+
+      for (let period = 1; period <= periodsPerYear; period++) {
+        const periodIndex = (year - 1) * periodsPerYear + period;
+        if (periodIndex > totalPeriods) break;
+
+        // 1. Calculate Withdrawal Amount
+        let withdrawal;
+        if (w_type === "rupees") {
+          withdrawal = w_value;
+        } else { // percentage
+          // Withdrawal is a percentage of the current balance
+          withdrawal = currentBalance * (w_value / 100);
+        }
+        
+        // Ensure withdrawal doesn't exceed balance
+        withdrawal = Math.min(withdrawal, currentBalance);
+
+        // 2. Apply Withdrawal
+        currentBalance -= withdrawal;
+        totalWithdrawn += withdrawal;
+        yearlyWithdrawn += withdrawal;
+
+        // 3. Apply Returns (compounded on the remaining balance)
+        const returnsThisPeriod = currentBalance * r_period;
+        currentBalance += returnsThisPeriod;
+        totalReturns += returnsThisPeriod;
+        yearlyReturns += returnsThisPeriod;
+
+        // Monthly Report Generation (only if frequency is monthly)
+        if (w_frequency === "monthly") {
+          const monthIndex = (year - 1) * 12 + period;
+          monthlyReport.push({
+            period: monthIndex,
+            label: `Month ${monthIndex}`,
+            withdrawal: withdrawal,
+            returnsEarned: returnsThisPeriod,
+            endBalance: currentBalance,
+          });
+        }
       }
-      
-      // Ensure withdrawal doesn't exceed balance
-      withdrawal = Math.min(withdrawal, currentBalance);
 
-      // 2. Apply Withdrawal
-      currentBalance -= withdrawal;
-      totalWithdrawn += withdrawal;
-
-      // 3. Apply Returns (compounded on the remaining balance)
-      const returnsThisPeriod = currentBalance * r_period;
-      currentBalance += returnsThisPeriod;
-      totalReturns += returnsThisPeriod;
+      // Yearly Report Generation
+      yearlyReport.push({
+        period: year,
+        label: `Year ${year}`,
+        withdrawal: yearlyWithdrawn,
+        returnsEarned: yearlyReturns,
+        endBalance: currentBalance,
+      });
     }
 
-    const finalCorpus = currentBalance;
-    const totalInvestment = P; // For SWP, initial investment is the total investment
+    // If withdrawal frequency is annual, the monthly report is empty
+    const finalMonthlyReport = w_frequency === "annual" ? [] : monthlyReport;
 
     return {
-      totalInvestment,
+      totalInvestment: P,
       totalWithdrawn,
-      finalCorpus,
+      finalCorpus: currentBalance,
       totalReturns,
+      yearlyReport,
+      monthlyReport: finalMonthlyReport,
     };
-  }, [initialInvestment, returnRate, timePeriod, withdrawalAmount, withdrawalFrequency, withdrawalType]);
+  };
 
-  // --- Chart Data and Formatting ---
+  // --- SWP Calculations (Updated to use generateSWPReport) ---
+
+  const swpReportData = useMemo(() => {
+    const r_annual = returnRate / 100;
+    return generateSWPReport(
+      initialInvestment,
+      r_annual,
+      timePeriod,
+      withdrawalAmount,
+      withdrawalType,
+      withdrawalFrequency
+    );
+  }, [initialInvestment, returnRate, timePeriod, withdrawalAmount, withdrawalType, withdrawalFrequency]);
+
+  const calculations = {
+    totalInvestment: swpReportData.totalInvestment,
+    totalWithdrawn: swpReportData.totalWithdrawn,
+    finalCorpus: swpReportData.finalCorpus,
+    totalReturns: swpReportData.totalReturns,
+  };
+
+  // --- Chart Data ---
 
   const chartData = [
     { name: "Total Withdrawn", value: calculations.totalWithdrawn },
@@ -86,10 +151,6 @@ const SWPCalculator: React.FC = () => {
   ];
 
   const COLORS = ["#4F46E5", "#E0E7FF"];
-
-  const formatCurrency = (value: number) => {
-    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-  };
 
   // --- Component Render ---
 
@@ -227,6 +288,12 @@ const SWPCalculator: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </div>
+          
+          {/* SWP Report Table Integration */}
+          <SWPReportTable 
+            yearlyData={swpReportData.yearlyReport} 
+            monthlyData={swpReportData.monthlyReport} 
+          />
         </CardContent>
       </Card>
     </div>

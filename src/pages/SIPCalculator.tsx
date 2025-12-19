@@ -6,14 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import { Calculator } from "lucide-react";
 import CalculatorInput from "@/components/CalculatorInput";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+type Frequency = "monthly" | "annual";
 
 const SIPCalculator: React.FC = () => {
   // State for SIP Calculator
   const [monthlyInvestment, setMonthlyInvestment] = useState(25000);
   const [sipReturnRate, setSipReturnRate] = useState(12);
   const [sipTimePeriod, setSipTimePeriod] = useState(10);
+  const [sipFrequency, setSipFrequency] = useState<Frequency>("monthly");
 
-  // State for Lumpsum Calculator
+  // State for Lumpsum Calculator (no change needed here)
   const [lumpsumInvestment, setLumpsumInvestment] = useState(1000000);
   const [lumpsumReturnRate, setLumpsumReturnRate] = useState(12);
   const [lumpsumTimePeriod, setLumpsumTimePeriod] = useState(10);
@@ -23,23 +34,30 @@ const SIPCalculator: React.FC = () => {
   const [comboMonthlyInvestment, setComboMonthlyInvestment] = useState(10000);
   const [comboReturnRate, setComboReturnRate] = useState(12);
   const [comboTimePeriod, setComboTimePeriod] = useState(10);
+  const [comboFrequency, setComboFrequency] = useState<Frequency>("monthly");
 
   const sipCalculations = useMemo(() => {
     const P = monthlyInvestment;
-    const i = sipReturnRate / 12 / 100;
-    const n = sipTimePeriod * 12;
+    const compoundingPeriods = sipFrequency === "monthly" ? 12 : 1;
+    const i = sipReturnRate / compoundingPeriods / 100;
+    const n = sipTimePeriod * compoundingPeriods;
+
+    if (n <= 0) {
+      return { investedAmount: 0, estimatedReturns: 0, totalValue: 0 };
+    }
 
     if (i === 0) {
       const totalValue = P * n;
       return { investedAmount: totalValue, estimatedReturns: 0, totalValue };
     }
 
+    // Future Value of Annuity Due (investment at the start of the period)
     const totalValue = P * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
     const investedAmount = P * n;
     const estimatedReturns = totalValue - investedAmount;
 
     return { investedAmount, estimatedReturns, totalValue };
-  }, [monthlyInvestment, sipReturnRate, sipTimePeriod]);
+  }, [monthlyInvestment, sipReturnRate, sipTimePeriod, sipFrequency]);
 
   const lumpsumCalculations = useMemo(() => {
     const P = lumpsumInvestment;
@@ -56,23 +74,35 @@ const SIPCalculator: React.FC = () => {
   const comboCalculations = useMemo(() => {
     const L = comboLumpsum;
     const S = comboMonthlyInvestment;
-    const i = comboReturnRate / 12 / 100;
-    const n = comboTimePeriod * 12;
+    const compoundingPeriods = comboFrequency === "monthly" ? 12 : 1;
+    const i = comboReturnRate / compoundingPeriods / 100;
+    const n = comboTimePeriod * compoundingPeriods;
 
     if (n <= 0) {
       const invested = L + S * n;
       return { investedAmount: invested, estimatedReturns: 0, totalValue: invested };
     }
 
-    const fvLumpsum = L * Math.pow(1 + i, n);
-    const fvSip = i === 0 ? S * n : S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+    // Lumpsum part (compounded annually)
+    const r_annual = comboReturnRate / 100;
+    const n_years = comboTimePeriod;
+    const fvLumpsum = L * Math.pow(1 + r_annual, n_years);
+
+    // SIP part (compounded based on frequency)
+    let fvSip;
+    if (i === 0) {
+      fvSip = S * n;
+    } else {
+      // Future Value of Annuity Due
+      fvSip = S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+    }
     
     const totalValue = fvLumpsum + fvSip;
     const investedAmount = L + (S * n);
     const estimatedReturns = totalValue - investedAmount;
 
     return { investedAmount, estimatedReturns, totalValue };
-  }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod]);
+  }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod, comboFrequency]);
 
   const sipChartData = [
     { name: "Invested amount", value: sipCalculations.investedAmount },
@@ -115,15 +145,34 @@ const SIPCalculator: React.FC = () => {
             <TabsContent value="sip">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
-                  <CalculatorInput
-                    label="Monthly investment"
-                    value={monthlyInvestment}
-                    onChange={setMonthlyInvestment}
-                    min={500}
-                    max={50000000}
-                    step={500}
-                    isCurrency
-                  />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <CalculatorInput
+                        label={sipFrequency === "monthly" ? "Monthly investment" : "Annual investment"}
+                        value={monthlyInvestment}
+                        onChange={setMonthlyInvestment}
+                        min={500}
+                        max={50000000}
+                        step={500}
+                        isCurrency
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="font-medium block mb-2">Frequency</Label>
+                      <Select
+                        value={sipFrequency}
+                        onValueChange={(value) => setSipFrequency(value as Frequency)}
+                      >
+                        <SelectTrigger className="text-lg h-12">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="annual">Annual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <CalculatorInput
                     label="Expected return rate (p.a)"
                     value={sipReturnRate}
@@ -224,15 +273,34 @@ const SIPCalculator: React.FC = () => {
                     step={10000}
                     isCurrency
                   />
-                  <CalculatorInput
-                    label="Monthly Investment (SIP)"
-                    value={comboMonthlyInvestment}
-                    onChange={setComboMonthlyInvestment}
-                    min={0}
-                    max={500000}
-                    step={500}
-                    isCurrency
-                  />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <CalculatorInput
+                        label={comboFrequency === "monthly" ? "Monthly Investment (SIP)" : "Annual Investment (SIP)"}
+                        value={comboMonthlyInvestment}
+                        onChange={setComboMonthlyInvestment}
+                        min={0}
+                        max={500000}
+                        step={500}
+                        isCurrency
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="font-medium block mb-2">Frequency</Label>
+                      <Select
+                        value={comboFrequency}
+                        onValueChange={(value) => setComboFrequency(value as Frequency)}
+                      >
+                        <SelectTrigger className="text-lg h-12">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="annual">Annual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <CalculatorInput
                     label="Expected return rate (p.a)"
                     value={comboReturnRate}

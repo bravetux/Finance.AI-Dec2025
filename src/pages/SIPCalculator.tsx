@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import ReportTable, { ReportRow } from "@/components/ReportTable";
 
 type Frequency = "monthly" | "annual";
 type StepUpType = "rupees" | "percentage";
@@ -41,100 +42,134 @@ const SIPCalculator: React.FC = () => {
   const [comboStepUpValue, setComboStepUpValue] = useState(0); // Annual increase value
   const [comboStepUpType, setComboStepUpType] = useState<StepUpType>("percentage");
 
-  // --- Calculation Logic ---
+  // --- Helper Functions ---
 
-  const calculateStepUpSIP = (
-    P: number, // Periodic Investment
-    r: number, // Annual Return Rate (as a decimal, e.g., 0.12)
-    t: number, // Time Period (in years)
+  const formatCurrency = (value: number) => {
+    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  };
+
+  // --- Report Generation Logic ---
+
+  const generateSIPReport = (
+    initialInvestment: number, // Lumpsum for combo, 0 for pure SIP
+    periodicInvestment: number,
+    r_annual: number, // Annual Return Rate (as a decimal)
+    t_years: number, // Time Period (in years)
     f: Frequency, // Investment Frequency
     s: number, // Step-up Value
     s_type: StepUpType // Step-up Type
   ) => {
+    const monthlyReport: ReportRow[] = [];
+    const yearlyReport: ReportRow[] = [];
+
     const compoundingPeriods = f === "monthly" ? 12 : 1;
-    const i = r / compoundingPeriods; // Rate per period
-    const n_periods = t * compoundingPeriods; // Total number of periods
-    const n_years = t;
+    const i_period = r_annual / compoundingPeriods; // Rate per period
+    const i_month = r_annual / 12; // Monthly rate for monthly report
+    const totalPeriods = t_years * compoundingPeriods;
 
-    let totalValue = 0;
-    let investedAmount = 0;
+    let currentBalance = initialInvestment;
+    let totalInvested = initialInvestment;
+    let totalReturns = 0;
+    let currentPeriodicInvestment = periodicInvestment;
 
-    // Step-up SIP calculation is done year by year
-    for (let year = 1; year <= n_years; year++) {
-      let currentInvestment = P;
-      
-      // Adjust investment for the current year based on step-up
+    let yearlyInvested = 0;
+    let yearlyReturns = 0;
+
+    for (let year = 1; year <= t_years; year++) {
+      // Apply step-up at the start of the year (after year 1)
       if (year > 1) {
         if (s_type === "percentage") {
-          // P is the initial investment, which is stepped up annually
-          currentInvestment = P * Math.pow(1 + s / 100, year - 1);
-        } else { // rupees
-          currentInvestment = P + s * (year - 1);
+          currentPeriodicInvestment *= (1 + s / 100);
+        } else if (s_type === "rupees") {
+          currentPeriodicInvestment += s;
         }
       }
 
-      // Calculate Future Value of the current year's investment
-      // The investment is made for 'compoundingPeriods' times in this year.
-      // The total compounding periods remaining for this year's investment is:
-      // (n_years - year) * compoundingPeriods + compoundingPeriods (for the current year)
-      const remainingPeriods = (n_years - year) * compoundingPeriods + compoundingPeriods;
+      yearlyInvested = 0;
+      yearlyReturns = 0;
 
-      // Future Value of Annuity Due for the current year's investment
-      let fv_year;
-      if (i === 0) {
-        fv_year = currentInvestment * compoundingPeriods;
-      } else {
-        fv_year = currentInvestment * (((Math.pow(1 + i, compoundingPeriods) - 1) / i) * (1 + i));
+      for (let period = 1; period <= compoundingPeriods; period++) {
+        const periodIndex = (year - 1) * compoundingPeriods + period;
+        if (periodIndex > totalPeriods) break;
+
+        // Investment is made at the start of the period (Annuity Due)
+        const investmentThisPeriod = currentPeriodicInvestment;
+        currentBalance += investmentThisPeriod;
+        totalInvested += investmentThisPeriod;
+        yearlyInvested += investmentThisPeriod;
+
+        // Calculate returns for the period
+        const returnsThisPeriod = currentBalance * i_period;
+        currentBalance += returnsThisPeriod;
+        totalReturns += returnsThisPeriod;
+        yearlyReturns += returnsThisPeriod;
+
+        // Monthly Report Generation (only if frequency is monthly)
+        if (f === "monthly") {
+          const monthIndex = (year - 1) * 12 + period;
+          monthlyReport.push({
+            period: monthIndex,
+            label: `Month ${monthIndex}`,
+            amountDeposited: investmentThisPeriod,
+            returnsEarned: returnsThisPeriod,
+            endBalance: currentBalance,
+          });
+        }
       }
 
-      // Compound the year's FV for the remaining years
-      const fv_compounded = fv_year * Math.pow(1 + r, n_years - year);
-      totalValue += fv_compounded;
-      
-      // Calculate invested amount for the current year
-      investedAmount += currentInvestment * compoundingPeriods;
+      // Yearly Report Generation
+      yearlyReport.push({
+        period: year,
+        label: `Year ${year}`,
+        amountDeposited: yearlyInvested + (year === 1 ? initialInvestment : 0),
+        returnsEarned: yearlyReturns + (year === 1 ? initialInvestment * (Math.pow(1 + r_annual, 1) - 1) : 0), // Simplified for yearly report
+        endBalance: currentBalance,
+      });
     }
 
-    const estimatedReturns = totalValue - investedAmount;
-    return { investedAmount, estimatedReturns, totalValue };
+    // If frequency is annual, the monthly report is just the yearly report broken down by month
+    // For simplicity and accuracy, we will only show the monthly report if the investment frequency is monthly.
+    // If frequency is annual, we will generate a simplified monthly view for the report.
+    let finalMonthlyReport = monthlyReport;
+    if (f === "annual") {
+        // For annual SIP, we can't accurately show monthly returns on the SIP amount, 
+        // so we'll just show the yearly report and keep the monthly report empty.
+        // The user chose annual, so the detailed monthly breakdown is less relevant.
+        finalMonthlyReport = [];
+    }
+
+
+    return {
+      investedAmount: totalInvested,
+      estimatedReturns: totalReturns,
+      totalValue: currentBalance,
+      yearlyReport,
+      monthlyReport: finalMonthlyReport,
+    };
   };
 
-  const sipCalculations = useMemo(() => {
+  // --- SIP Calculations (Updated to use generateSIPReport) ---
+
+  const sipReportData = useMemo(() => {
     const r_annual = sipReturnRate / 100;
-
-    if (sipStepUpValue > 0) {
-      return calculateStepUpSIP(
-        monthlyInvestment,
-        r_annual,
-        sipTimePeriod,
-        sipFrequency,
-        sipStepUpValue,
-        sipStepUpType
-      );
-    }
-
-    // Standard SIP calculation (if no step-up)
-    const P = monthlyInvestment;
-    const compoundingPeriods = sipFrequency === "monthly" ? 12 : 1;
-    const i = r_annual / compoundingPeriods;
-    const n = sipTimePeriod * compoundingPeriods;
-
-    if (n <= 0) {
-      return { investedAmount: 0, estimatedReturns: 0, totalValue: 0 };
-    }
-
-    if (i === 0) {
-      const totalValue = P * n;
-      return { investedAmount: totalValue, estimatedReturns: 0, totalValue };
-    }
-
-    // Future Value of Annuity Due
-    const totalValue = P * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
-    const investedAmount = P * n;
-    const estimatedReturns = totalValue - investedAmount;
-
-    return { investedAmount, estimatedReturns, totalValue };
+    return generateSIPReport(
+      0, // initialInvestment
+      monthlyInvestment,
+      r_annual,
+      sipTimePeriod,
+      sipFrequency,
+      sipStepUpValue,
+      sipStepUpType
+    );
   }, [monthlyInvestment, sipReturnRate, sipTimePeriod, sipFrequency, sipStepUpValue, sipStepUpType]);
+
+  const sipCalculations = {
+    investedAmount: sipReportData.investedAmount,
+    estimatedReturns: sipReportData.estimatedReturns,
+    totalValue: sipReportData.totalValue,
+  };
+
+  // --- Lumpsum Calculations (No Change) ---
 
   const lumpsumCalculations = useMemo(() => {
     const P = lumpsumInvestment;
@@ -148,53 +183,28 @@ const SIPCalculator: React.FC = () => {
     return { investedAmount, estimatedReturns, totalValue };
   }, [lumpsumInvestment, lumpsumReturnRate, lumpsumTimePeriod]);
 
-  const comboCalculations = useMemo(() => {
-    const L = comboLumpsum;
-    const S = comboMonthlyInvestment;
+  // --- Combo Calculations (Updated to use generateSIPReport) ---
+
+  const comboReportData = useMemo(() => {
     const r_annual = comboReturnRate / 100;
-    const n_years = comboTimePeriod;
-
-    // 1. Lumpsum part (compounded annually)
-    const fvLumpsum = L * Math.pow(1 + r_annual, n_years);
-
-    // 2. SIP part (with or without step-up)
-    let sipResult;
-    if (comboStepUpValue > 0) {
-      sipResult = calculateStepUpSIP(
-        S,
-        r_annual,
-        n_years,
-        comboFrequency,
-        comboStepUpValue,
-        comboStepUpType
-      );
-    } else {
-      // Standard SIP calculation
-      const compoundingPeriods = comboFrequency === "monthly" ? 12 : 1;
-      const i = r_annual / compoundingPeriods;
-      const n = n_years * compoundingPeriods;
-
-      if (n <= 0) {
-        sipResult = { investedAmount: 0, estimatedReturns: 0, totalValue: 0 };
-      } else if (i === 0) {
-        const totalValue = S * n;
-        sipResult = { investedAmount: totalValue, estimatedReturns: 0, totalValue };
-      } else {
-        // Future Value of Annuity Due
-        const totalValue = S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
-        const investedAmount = S * n;
-        sipResult = { investedAmount, estimatedReturns: totalValue - investedAmount, totalValue };
-      }
-    }
-    
-    const totalValue = fvLumpsum + sipResult.totalValue;
-    const investedAmount = L + sipResult.investedAmount;
-    const estimatedReturns = totalValue - investedAmount;
-
-    return { investedAmount, estimatedReturns, totalValue };
+    return generateSIPReport(
+      comboLumpsum, // initialInvestment
+      comboMonthlyInvestment,
+      r_annual,
+      comboTimePeriod,
+      comboFrequency,
+      comboStepUpValue,
+      comboStepUpType
+    );
   }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod, comboFrequency, comboStepUpValue, comboStepUpType]);
 
-  // --- Chart Data and Formatting ---
+  const comboCalculations = {
+    investedAmount: comboReportData.investedAmount,
+    estimatedReturns: comboReportData.estimatedReturns,
+    totalValue: comboReportData.totalValue,
+  };
+
+  // --- Chart Data ---
 
   const sipChartData = [
     { name: "Invested amount", value: sipCalculations.investedAmount },
@@ -212,10 +222,6 @@ const SIPCalculator: React.FC = () => {
   ];
 
   const COLORS = ["#E0E7FF", "#4F46E5"];
-
-  const formatCurrency = (value: number) => {
-    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-  };
 
   // --- Component Render ---
 
@@ -330,9 +336,10 @@ const SIPCalculator: React.FC = () => {
                   </div>
                 </div>
               </div>
+              <ReportTable yearlyData={sipReportData.yearlyReport} monthlyData={sipReportData.monthlyReport} />
             </TabsContent>
 
-            {/* Lumpsum Calculator Content (No change) */}
+            {/* Lumpsum Calculator Content */}
             <TabsContent value="lumpsum">
               <div className="grid md:grid-cols-2 gap-8 mt-6">
                 <div className="space-y-8">
@@ -380,6 +387,17 @@ const SIPCalculator: React.FC = () => {
                   </div>
                 </div>
               </div>
+              {/* Lumpsum Report Table (Simple yearly report) */}
+              <ReportTable 
+                yearlyData={[{
+                  period: 1,
+                  label: "Lumpsum",
+                  amountDeposited: lumpsumCalculations.investedAmount,
+                  returnsEarned: lumpsumCalculations.estimatedReturns,
+                  endBalance: lumpsumCalculations.totalValue,
+                }]} 
+                monthlyData={[]} 
+              />
             </TabsContent>
 
             {/* Lumpsum + SIP Calculator Content */}
@@ -486,6 +504,7 @@ const SIPCalculator: React.FC = () => {
                   </div>
                 </div>
               </div>
+              <ReportTable yearlyData={comboReportData.yearlyReport} monthlyData={comboReportData.monthlyReport} />
             </TabsContent>
           </Tabs>
         </CardContent>

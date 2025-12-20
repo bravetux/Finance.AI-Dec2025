@@ -261,9 +261,6 @@ const SWPCalculator: React.FC = () => {
            <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
              <Download className="w-4 h-4 mr-2" /> CSV
            </Button>
-           <Button variant="outline" size="sm" onClick={handlePrint}>
-             <Printer className="w-4 h-4 mr-2" /> PDF / Print
-           </Button>
         </div>
       </div>
       

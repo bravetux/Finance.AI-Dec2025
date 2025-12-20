@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AllocationPieChart from "@/components/AllocationPieChart";
-import { LineChart, Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { LineChart, Wallet, TrendingUp, Banknote } from "lucide-react";
 
 interface PostRetirementSettings {
   lifeExpectancy: number;
@@ -19,7 +19,8 @@ interface PostRetirementSettings {
 const PostRetirementStrategy: React.FC = () => {
   const [initialCorpus, setInitialCorpus] = useState(0);
   const [initialAnnualExpenses, setInitialAnnualExpenses] = useState(0);
-  const [currentAge, setCurrentAge] = useState(0);
+  const [retirementAge, setRetirementAge] = useState(0);
+  const [baseExpenseNow, setBaseExpenseNow] = useState(0);
 
   const [settings, setSettings] = useState<PostRetirementSettings>(() => {
     const defaultState: PostRetirementSettings = {
@@ -39,12 +40,25 @@ const PostRetirementStrategy: React.FC = () => {
   useEffect(() => {
     const loadData = () => {
       try {
+        // Load corpus from "Can You Retire Now?"
         const canRetireData = JSON.parse(localStorage.getItem('canRetireNowData') || '{}');
-        const projectedCashflowSettings = JSON.parse(localStorage.getItem('projectedCashflowSettings') || '{}');
-        
         setInitialCorpus(canRetireData.corpus || 0);
-        setInitialAnnualExpenses(canRetireData.annualExpenses || 0);
-        setCurrentAge(projectedCashflowSettings.retirementAge || 0);
+
+        // Load retirement details from Retirement Dashboard
+        const retirementData = JSON.parse(localStorage.getItem('retirementData') || '{}');
+        const currentAge = retirementData.currentAge || 0;
+        const retAge = retirementData.retirementAge || 0;
+        const currentExpenses = retirementData.currentAnnualExpenses || 0;
+        const inflation = retirementData.inflation || 6;
+
+        setRetirementAge(retAge);
+        setBaseExpenseNow(currentExpenses);
+
+        // Compute Future Value of expenses at Retirement Age
+        const yearsToRetire = Math.max(0, retAge - currentAge);
+        const futureExpense = currentExpenses * Math.pow(1 + inflation / 100, yearsToRetire);
+        
+        setInitialAnnualExpenses(futureExpense);
       } catch (e) {
         console.error("Failed to load data for post-retirement strategy", e);
       }
@@ -85,10 +99,10 @@ const PostRetirementStrategy: React.FC = () => {
     const projections = [];
     let corpus = initialCorpus;
     let withdrawal = initialAnnualExpenses;
-    const maxYears = Math.max(0, settings.lifeExpectancy - currentAge);
+    const maxYears = Math.max(0, settings.lifeExpectancy - retirementAge);
 
     for (let year = 1; year <= maxYears; year++) {
-      const age = currentAge + year;
+      const age = retirementAge + year;
       const openingBalance = corpus;
       
       corpus -= withdrawal;
@@ -106,7 +120,7 @@ const PostRetirementStrategy: React.FC = () => {
     }
 
     return { projections, yearsLasted: projections.length, finalCorpus: corpus };
-  }, [initialCorpus, initialAnnualExpenses, currentAge, settings, weightedAvgReturn, totalAllocation]);
+  }, [initialCorpus, initialAnnualExpenses, retirementAge, settings, weightedAvgReturn, totalAllocation]);
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
@@ -114,18 +128,25 @@ const PostRetirementStrategy: React.FC = () => {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Post-Retirement Withdrawal Strategy</h1>
       
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Starting Corpus</CardTitle><Wallet className="h-4 w-4 text-muted-foreground" /></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{formatCurrency(initialCorpus)}</div><p className="text-xs text-muted-foreground">From 'Can You Retire Now?' page</p></CardContent>
+          <CardContent><div className="text-2xl font-bold">{formatCurrency(initialCorpus)}</div><p className="text-xs text-muted-foreground">From 'Can You Retire Now?'</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Withdrawal Expense (FV)</CardTitle><Banknote className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{formatCurrency(initialAnnualExpenses)}</div>
+            <p className="text-xs text-muted-foreground">Annual cost at age {retirementAge}</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Corpus Lasts Until Age</CardTitle><LineChart className="h-4 w-4 text-muted-foreground" /></CardHeader>
-          <CardContent><div className="text-2xl font-bold text-blue-600">{currentAge + simulation.yearsLasted}</div><p className="text-xs text-muted-foreground">Your money is projected to last {simulation.yearsLasted} years.</p></CardContent>
+          <CardContent><div className="text-2xl font-bold text-blue-600">{retirementAge + simulation.yearsLasted}</div><p className="text-xs text-muted-foreground">Money lasts {simulation.yearsLasted} years.</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Final Balance</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
-          <CardContent><div className={`text-2xl font-bold ${simulation.finalCorpus > 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(simulation.finalCorpus)}</div><p className="text-xs text-muted-foreground">Projected balance at age {settings.lifeExpectancy}.</p></CardContent>
+          <CardContent><div className={`text-2xl font-bold ${simulation.finalCorpus > 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(simulation.finalCorpus)}</div><p className="text-xs text-muted-foreground">Balance at age {settings.lifeExpectancy}.</p></CardContent>
         </Card>
       </div>
 
@@ -142,7 +163,7 @@ const PostRetirementStrategy: React.FC = () => {
               <div className="w-full max-w-sm space-y-6 pt-6 border-t">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="inflation-slider" className="font-semibold">Annual Inflation (%)</Label>
+                    <Label htmlFor="inflation-slider" className="font-semibold">Post-Retirement Inflation (%)</Label>
                     <span className="text-lg font-bold text-blue-600">{settings.inflation}%</span>
                   </div>
                   <Slider 

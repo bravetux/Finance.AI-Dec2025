@@ -1,512 +1,302 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calculator, Clock, Wallet, Download, Printer, LineChart as LineChartIcon } from "lucide-react";
-import CalculatorInput from "@/components/CalculatorInput";
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Legend, 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip 
-} from "recharts";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import SWPReportTable, { SWPReportRow } from "@/components/SWPReportTable";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
-type Frequency = "monthly" | "annual";
-type WithdrawalType = "rupees" | "percentage";
-type CalcMode = "value" | "longevity";
+const COLORS = ["#10b981", "#3b82f6"];
 
-const SWPCalculator: React.FC = () => {
-  // State for SWP Calculator
-  const [calcMode, setCalcMode] = useState<CalcMode>("value");
-  const [initialInvestment, setInitialInvestment] = useState(5000000);
-  const [returnRate, setReturnRate] = useState(8);
-  const [inflationRate, setInflationRate] = useState(0); 
-  const [timePeriod, setTimePeriod] = useState(15);
-  const [withdrawalAmount, setWithdrawalAmount] = useState(30000);
-  const [withdrawalFrequency, setWithdrawalFrequency] = useState<Frequency>("monthly");
-  const [withdrawalType, setWithdrawalType] = useState<WithdrawalType>("rupees");
+const SWPCalculator = () => {
+  const [calculationType, setCalculationType] = useState<"finalValue" | "duration">("finalValue");
+  const [initialInvestment, setInitialInvestment] = useState(1000000);
+  const [monthlyWithdrawal, setMonthlyWithdrawal] = useState(10000);
+  const [expectedReturn, setExpectedReturn] = useState(10);
+  const [years, setYears] = useState(10);
 
-  // --- Helper Functions ---
-
-  const formatCurrency = (value: number) => {
-    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  const formatWithCommas = (value: number) => {
+    return new Intl.NumberFormat("en-IN").format(value);
   };
 
-  const formatCurrencyCompact = (value: number) => {
-    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
-    if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
-    return `₹${(value / 1000).toFixed(0)}k`;
-  };
-
-  // --- Report Generation Logic ---
-
-  const generateSWPReport = (
-    P: number, // Initial Investment
-    r_annual: number, // Annual Return Rate (as a decimal)
-    inflation_rate: number, // Annual Inflation Rate (percentage)
-    t_years: number, // Time Period (in years)
-    w_value: number, // Withdrawal Value (Rupees or Percentage)
-    w_type: WithdrawalType,
-    w_frequency: Frequency
-  ) => {
-    const monthlyReport: SWPReportRow[] = [];
-    const yearlyReport: SWPReportRow[] = [];
-
-    const periodsPerYear = w_frequency === "monthly" ? 12 : 1;
-    const r_period = r_annual / periodsPerYear;
-    const totalPeriods = t_years * periodsPerYear;
-
-    let currentBalance = P;
+  const { totalWithdrawal, finalBalance, chartData, durationMonths } = useMemo(() => {
+    const monthlyRate = expectedReturn / 12 / 100;
+    let currentBalance = initialInvestment;
     let totalWithdrawn = 0;
-    let totalReturns = 0;
+    const data = [];
     
-    // Track the current withdrawal amount (it may increase due to inflation)
-    let currentWithdrawalBase = w_value;
-    
-    // Track if funds depleted
-    let depletionPeriod = -1;
+    data.push({
+      month: 0,
+      balance: Math.round(currentBalance),
+      withdrawn: 0,
+    });
 
-    for (let year = 1; year <= t_years; year++) {
-      // Apply annual inflation adjustment to the withdrawal amount at the start of each year (after year 1)
-      if (year > 1 && w_type === "rupees" && inflation_rate > 0) {
-        currentWithdrawalBase = currentWithdrawalBase * (1 + inflation_rate / 100);
-      }
+    const maxMonths = calculationType === "finalValue" ? years * 12 : 1200; // Cap at 100 years for duration mode
+    let monthsElapsed = 0;
 
-      let yearlyWithdrawn = 0;
-      let yearlyReturns = 0;
-
-      for (let period = 1; period <= periodsPerYear; period++) {
-        const periodIndex = (year - 1) * periodsPerYear + period;
-        
-        if (currentBalance <= 0.1) { 
-           if (depletionPeriod === -1) depletionPeriod = periodIndex - 1;
-        }
-
-        // 1. Calculate Withdrawal Amount
-        let withdrawal;
-        if (w_type === "rupees") {
-          withdrawal = currentWithdrawalBase;
-        } else { // percentage
-          withdrawal = currentBalance * (w_value / 100);
-        }
-        
-        // Ensure withdrawal doesn't exceed balance
-        const actualWithdrawal = Math.min(withdrawal, Math.max(0, currentBalance));
-
-        // 2. Apply Withdrawal
-        currentBalance -= actualWithdrawal;
-        totalWithdrawn += actualWithdrawal;
-        yearlyWithdrawn += actualWithdrawal;
-
-        // 3. Apply Returns (compounded on the remaining balance)
-        const returnsThisPeriod = Math.max(0, currentBalance * r_period);
-        currentBalance += returnsThisPeriod;
-        totalReturns += returnsThisPeriod;
-        yearlyReturns += returnsThisPeriod;
-
-        // Monthly Report Generation
-        if (w_frequency === "monthly") {
-          monthlyReport.push({
-            period: periodIndex,
-            label: `Month ${periodIndex}`,
-            withdrawal: actualWithdrawal,
-            returnsEarned: returnsThisPeriod,
-            endBalance: Math.max(0, currentBalance),
+    for (let i = 1; i <= maxMonths; i++) {
+      const interest = currentBalance * monthlyRate;
+      currentBalance = currentBalance + interest - monthlyWithdrawal;
+      totalWithdrawn += monthlyWithdrawal;
+      
+      if (currentBalance <= 0) {
+        currentBalance = 0;
+        monthsElapsed = i;
+        if (i % 12 === 0 || i === monthsElapsed) {
+          data.push({
+            month: i / 12,
+            balance: Math.round(currentBalance),
+            withdrawn: Math.round(totalWithdrawn),
           });
         }
+        break;
       }
 
-      // Yearly Report Generation
-      yearlyReport.push({
-        period: year,
-        label: `Year ${year}`,
-        withdrawal: yearlyWithdrawn,
-        returnsEarned: yearlyReturns,
-        endBalance: Math.max(0, currentBalance),
-      });
-
-      if (currentBalance <= 0.1 && depletionPeriod === -1) {
-          // If we depleted exactly at year end
-          depletionPeriod = year * periodsPerYear;
+      if (i % 12 === 0) {
+        data.push({
+          month: i / 12,
+          balance: Math.round(currentBalance),
+          withdrawn: Math.round(totalWithdrawn),
+        });
       }
+      monthsElapsed = i;
     }
-    
+
     return {
-      totalInvestment: P,
-      totalWithdrawn,
-      finalCorpus: Math.max(0, currentBalance),
-      totalReturns,
-      yearlyReport,
-      monthlyReport: w_frequency === "annual" ? [] : monthlyReport,
-      depletionPeriod, // Index of period (month or year depending on freq logic, but here we track total periods)
-      periodsPerYear
+      totalWithdrawal: Math.round(totalWithdrawn),
+      finalBalance: Math.round(currentBalance),
+      chartData: data,
+      durationMonths: monthsElapsed
     };
-  };
+  }, [initialInvestment, monthlyWithdrawal, expectedReturn, years, calculationType]);
 
-  // --- SWP Calculations ---
-
-  const swpReportData = useMemo(() => {
-    const r_annual = returnRate / 100;
-    
-    // In Longevity mode, we simulate for a long time (e.g., 60 years) to find depletion
-    // In Value mode, we simulate for the specific timePeriod
-    const simulationYears = calcMode === "longevity" ? 60 : timePeriod;
-
-    const data = generateSWPReport(
-      initialInvestment,
-      r_annual,
-      inflationRate,
-      simulationYears,
-      withdrawalAmount,
-      withdrawalType,
-      withdrawalFrequency
-    );
-
-    // If in Longevity mode, we might want to slice the report data to where it hits 0
-    if (calcMode === "longevity" && data.depletionPeriod !== -1) {
-        // Find the index in report arrays
-        const endYear = Math.ceil(data.depletionPeriod / data.periodsPerYear);
-        data.yearlyReport = data.yearlyReport.slice(0, endYear);
-        if (data.monthlyReport.length > 0) {
-            data.monthlyReport = data.monthlyReport.slice(0, data.depletionPeriod);
-        }
-    }
-
-    return data;
-  }, [initialInvestment, returnRate, inflationRate, timePeriod, withdrawalAmount, withdrawalType, withdrawalFrequency, calcMode]);
-
-  // --- Duration Formatter ---
-  const formatDuration = (totalPeriods: number, freq: Frequency) => {
-      if (totalPeriods === -1) return "More than 60 Years"; // Or Sustainable
-      
-      const periodsPerYear = freq === "monthly" ? 12 : 1;
-      const years = Math.floor(totalPeriods / periodsPerYear);
-      const remainingPeriods = totalPeriods % periodsPerYear;
-      
-      if (freq === "annual") return `${years} Years`;
-      
-      if (years === 0) return `${remainingPeriods} Months`;
-      if (remainingPeriods === 0) return `${years} Years`;
-      return `${years} Yrs ${remainingPeriods} Months`;
-  };
-  
-  const longevityResult = useMemo(() => {
-      if (calcMode !== "longevity") return null;
-      return formatDuration(swpReportData.depletionPeriod, withdrawalFrequency);
-  }, [swpReportData, withdrawalFrequency, calcMode]);
-
-
-  const calculations = {
-    totalInvestment: swpReportData.totalInvestment,
-    totalWithdrawn: swpReportData.totalWithdrawn,
-    finalCorpus: swpReportData.finalCorpus,
-    totalReturns: swpReportData.totalReturns,
-  };
-
-  // --- Chart Data ---
-  const pieChartData = [
-    { name: "Total Withdrawn", value: calculations.totalWithdrawn },
-    { name: "Final Corpus", value: calculations.finalCorpus },
+  const pieData = [
+    { name: "Final Balance", value: finalBalance },
+    { name: "Total Withdrawn", value: totalWithdrawal },
   ];
 
-  const COLORS = ["#4F46E5", "#E0E7FF"];
-
-  // --- Export Functions ---
-
-  const handlePrint = () => {
-    window.print();
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(value);
   };
-
-  const handleDownloadCSV = () => {
-    const headers = ["Period", "Withdrawal", "Returns Earned", "Balance"];
-    const rows = swpReportData.yearlyReport.map(row => [
-      row.label,
-      row.withdrawal.toFixed(2),
-      row.returnsEarned.toFixed(2),
-      row.endBalance.toFixed(2)
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.map(e => e.join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "swp_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // --- Component Render ---
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center print:hidden">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Calculator className="h-8 w-8" />
-          SWP Calculator
-        </h1>
-        <div className="flex gap-2">
-           <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
-             <Download className="w-4 h-4 mr-2" /> CSV
-           </Button>
+    <div className="container mx-auto py-10 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">SWP Calculator</h1>
+          <p className="text-muted-foreground">
+            Plan your Systematic Withdrawal Plan and see how long your money lasts
+          </p>
         </div>
-      </div>
-      
-      {/* Print-only Header */}
-      <div className="hidden print:block mb-8">
-        <h1 className="text-2xl font-bold mb-2">SWP Calculation Report</h1>
-        <p className="text-gray-500 text-sm">Generated on {new Date().toLocaleDateString()}</p>
-      </div>
 
-      <Tabs 
-        defaultValue="value" 
-        value={calcMode} 
-        onValueChange={(v) => setCalcMode(v as CalcMode)}
-        className="w-full print:hidden"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="value" className="flex items-center gap-2">
-            <Wallet className="w-4 h-4" /> Final Value
-          </TabsTrigger>
-          <TabsTrigger value="longevity" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" /> How Long Will It Last?
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={calculationType} onValueChange={(v) => setCalculationType(v as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="finalValue">Final Value</TabsTrigger>
+            <TabsTrigger value="duration">How long will it last?</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-8 print:hidden">
-                {/* Inputs */}
-                <CalculatorInput
-                  label="Initial Investment (Corpus)"
-                  value={initialInvestment}
-                  onChange={setInitialInvestment}
-                  min={100000}
-                  max={100000000}
-                  step={100000}
-                  isCurrency
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <CalculatorInput
-                    label="Return Rate (p.a)"
-                    value={returnRate}
-                    onChange={setReturnRate}
-                    min={1}
-                    max={30}
-                    step={0.5}
-                    unit="%"
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Withdrawal Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="initialInvestment">Initial Investment (₹)</Label>
+                  <Input
+                    id="initialInvestment"
+                    type="text"
+                    value={formatWithCommas(initialInvestment)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setInitialInvestment(Number(val));
+                    }}
                   />
-                  <div className={withdrawalType === "percentage" ? "opacity-50 pointer-events-none" : ""}>
-                     <CalculatorInput
-                      label="Inflation Rate (p.a)"
-                      value={inflationRate}
-                      onChange={setInflationRate}
-                      min={0}
-                      max={20}
-                      step={0.5}
-                      unit="%"
-                    />
-                  </div>
                 </div>
 
-                {/* Hide Time Period in Longevity Mode */}
-                {calcMode === "value" && (
-                  <CalculatorInput
-                    label="Time Period"
-                    value={timePeriod}
-                    onChange={setTimePeriod}
-                    min={1}
-                    max={40}
-                    step={1}
-                    unit=" Yr"
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyWithdrawal">Monthly Withdrawal (₹)</Label>
+                  <Input
+                    id="monthlyWithdrawal"
+                    type="text"
+                    value={formatWithCommas(monthlyWithdrawal)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setMonthlyWithdrawal(Number(val));
+                    }}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expectedReturn">Expected Return Rate (p.a %)</Label>
+                  <Input
+                    id="expectedReturn"
+                    type="number"
+                    value={expectedReturn}
+                    onChange={(e) => setExpectedReturn(Number(e.target.value))}
+                  />
+                </div>
+
+                {calculationType === "finalValue" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="years">Time Period (Years)</Label>
+                    <Input
+                      id="years"
+                      type="number"
+                      value={years}
+                      onChange={(e) => setYears(Number(e.target.value))}
+                    />
+                  </div>
                 )}
-                
-                {/* Withdrawal Options */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2">
-                    <CalculatorInput
-                      label={`Withdrawal (${withdrawalFrequency === "monthly" ? "Per Month" : "Per Year"})`}
-                      value={withdrawalAmount}
-                      onChange={setWithdrawalAmount}
-                      min={withdrawalType === "percentage" ? 0.1 : 0}
-                      max={withdrawalType === "percentage" ? 100 : 1000000000} 
-                      step={0.01}
-                      isCurrency={withdrawalType === "rupees"}
-                      unit={withdrawalType === "percentage" ? "%" : undefined}
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="font-medium block mb-2">Type</Label>
-                    <Select
-                      value={withdrawalType}
-                      onValueChange={(value) => setWithdrawalType(value as WithdrawalType)}
-                    >
-                      <SelectTrigger className="text-lg h-12">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="rupees">Rupees</SelectItem>
-                        <SelectItem value="percentage">Percentage</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-3">
-                    <Label className="font-medium block mb-2">Withdrawal Frequency</Label>
-                    <Select
-                      value={withdrawalFrequency}
-                      onValueChange={(value) => setWithdrawalFrequency(value as Frequency)}
-                    >
-                      <SelectTrigger className="text-lg h-12">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="annual">Annual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Results and Charts */}
-              <div className="flex flex-col items-center w-full">
-                {/* Dynamic Result Display */}
-                {calcMode === "longevity" ? (
-                   <div className="w-full max-w-sm mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center space-y-2">
-                      <p className="text-sm text-indigo-600 font-medium uppercase tracking-wide">Your Corpus Will Last</p>
-                      <p className="text-3xl font-bold text-indigo-900">{longevityResult}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {swpReportData.depletionPeriod === -1 
-                          ? "Your returns exceed withdrawals. The corpus grows perpetually." 
-                          : "Based on current inputs and inflation."}
-                      </p>
-                   </div>
-                ) : null}
 
-                <div className="w-full max-w-sm space-y-4 text-lg mb-8">
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-bold">Initial Investment</span>
-                    <span className="font-bold text-xl text-indigo-600">
-                      {formatCurrency(calculations.totalInvestment)}
-                    </span>
+                <div className="pt-6 space-y-4 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total Withdrawn</span>
+                    <span className="font-semibold text-lg text-emerald-600">{formatCurrency(totalWithdrawal)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Returns Earned</span>
-                    <span className="font-medium">{formatCurrency(calculations.totalReturns)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Amount Withdrawn</span>
-                    <span className="font-medium">{formatCurrency(calculations.totalWithdrawn)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between border-t pt-4 mt-4">
-                    <span className="font-bold">Final Corpus Value</span>
-                    <span className={`font-bold text-xl ${calculations.finalCorpus > 0 ? "text-green-600" : "text-gray-500"}`}>
-                      {formatCurrency(calculations.finalCorpus)}
-                    </span>
-                  </div>
+                  {calculationType === "finalValue" ? (
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-bold">Final Balance</span>
+                      <span className="font-bold text-2xl text-primary">{formatCurrency(finalBalance)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-bold">Lasts For</span>
+                      <span className="font-bold text-2xl text-primary">
+                        {Math.floor(durationMonths / 12)}y {durationMonths % 12}m
+                      </span>
+                    </div>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
 
-                <Tabs defaultValue="pie" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4 print:hidden">
-                     <TabsTrigger value="pie"><PieChart className="w-4 h-4 mr-2"/> Summary</TabsTrigger>
-                     <TabsTrigger value="line"><LineChartIcon className="w-4 h-4 mr-2"/> Projection</TabsTrigger>
+            <Card>
+              <CardHeader>
+                <CardTitle>Visualization</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="balance" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="balance">Balance Over Time</TabsTrigger>
+                    <TabsTrigger value="split">Withdrawal Split</TabsTrigger>
                   </TabsList>
                   
-                  <div className="h-[300px] w-full print:h-[300px] mb-8">
-                    <TabsContent value="pie" className="h-full m-0"> 
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieChartData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={70}
-                              outerRadius={100}
-                              fill="#8884d8"
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {pieChartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />
-                          </PieChart>
-                        </ResponsiveContainer>
-                    </TabsContent>
-                    <TabsContent value="line" className="h-full m-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={swpReportData.yearlyReport}
-                            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  <TabsContent value="balance">
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis 
+                            dataKey="month" 
+                            label={{ value: 'Years', position: 'insideBottom', offset: -5 }}
+                          />
+                          <YAxis 
+                            tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`}
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => formatCurrency(value)}
+                            labelFormatter={(label) => `Year ${label}`}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="balance"
+                            stroke="#3b82f6"
+                            fillOpacity={1}
+                            fill="url(#colorBalance)"
+                            name="Balance"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="split">
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
                           >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis 
-                                dataKey="label" 
-                                tick={{fontSize: 12}} 
-                                tickFormatter={(val) => val.replace('Year ', '')} 
-                            />
-                            <YAxis 
-                                tickFormatter={formatCurrencyCompact} 
-                                tick={{fontSize: 12}}
-                                width={60}
-                            />
-                            <RechartsTooltip 
-                                formatter={(value: number) => formatCurrency(value)}
-                                labelStyle={{ color: '#333' }}
-                            />
-                            <Legend />
-                            <Line 
-                                type="monotone" 
-                                dataKey="endBalance" 
-                                name="Balance" 
-                                stroke="#4F46E5" 
-                                strokeWidth={3} 
-                                dot={false} 
-                            />
-                            <Line 
-                                type="monotone" 
-                                dataKey="withdrawal" 
-                                name="Yearly Withdrawal" 
-                                stroke="#82ca9d" 
-                                strokeWidth={2} 
-                                dot={false} 
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                    </TabsContent>
-                  </div>
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </TabsContent>
                 </Tabs>
-              </div>
-            </div>
-            
-            {/* SWP Report Table Integration */}
-            <div className="mt-8">
-               <SWPReportTable 
-                  yearlyData={swpReportData.yearlyReport} 
-                  monthlyData={swpReportData.monthlyReport} 
-               />
-            </div>
-          </CardContent>
-        </Card>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Detailed Report</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Total Withdrawn</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {chartData.map((row) => (
+                    <TableRow key={row.month}>
+                      <TableCell className="font-medium">Year {row.month}</TableCell>
+                      <TableCell className="text-emerald-600">{formatCurrency(row.withdrawn)}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(row.balance)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </Tabs>
+      </div>
     </div>
   );
 };

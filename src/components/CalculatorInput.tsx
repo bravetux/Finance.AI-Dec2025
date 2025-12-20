@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -27,23 +26,20 @@ const CalculatorInput: React.FC<CalculatorInputProps> = ({
   isCurrency = false,
 }) => {
   // Use local state to manage the input value as a string.
-  // This prevents the input from rejecting intermediate states like "12."
   const [localValue, setLocalValue] = useState(value.toString());
 
-  // Sync local state with prop value when it changes externally (e.g. slider drag)
+  // Sync local state with prop value when it changes externally
   useEffect(() => {
+    // Only update if the parsed local value differs from the prop value
+    // This prevents cursor jumping or re-formatting while typing
     const parsedLocal = parseFloat(localValue);
-    // Only update if the values are actually different to avoid overwriting "10.0" with "10"
     if (parsedLocal !== value) {
-      setLocalValue(value.toString());
+        // Special case: if user is typing "10." we don't want to force "10"
+        // But if the prop changed significantly (e.g. from parent calculation reset), we update.
+        // For simple inputs, simple check is usually enough.
+        setLocalValue(value.toString());
     }
-  }, [value, localValue]);
-
-  const handleSliderChange = (vals: number[]) => {
-    const newValue = vals[0];
-    setLocalValue(newValue.toString());
-    onChange(newValue);
-  };
+  }, [value]); // Removed localValue from dependency to avoid loop, but kept logic safe
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -59,15 +55,12 @@ const CalculatorInput: React.FC<CalculatorInputProps> = ({
   };
 
   const handleBlur = () => {
-    // Clamp values on blur
     let parsed = parseFloat(localValue);
     if (isNaN(parsed)) {
       parsed = min;
     }
     
-    // Optional: Strictly clamp to min/max on blur? 
-    // Usually friendly to allow typing 1000000 even if slider max is small?
-    // But let's respect the props for consistency with the slider.
+    // Clamp values on blur
     if (parsed < min) parsed = min;
     if (parsed > max) parsed = max;
 
@@ -76,45 +69,29 @@ const CalculatorInput: React.FC<CalculatorInputProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center gap-4">
-        <Label className="text-base font-medium text-gray-700">{label}</Label>
-        <div className="relative w-32 shrink-0">
-          {isCurrency && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-              ₹
-            </span>
-          )}
-          <Input
-            type="number"
-            value={localValue}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            step={step}
-            className={`h-10 text-right ${isCurrency ? "pl-7" : ""} ${
-              unit ? "pr-8" : ""
-            }`}
-          />
-          {unit && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-              {unit}
-            </span>
-          )}
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Slider
-          value={[value]}
-          min={min}
-          max={max}
+    <div className="flex flex-col gap-2">
+      <Label className="text-sm font-medium text-gray-700">{label}</Label>
+      <div className="relative w-full">
+        {isCurrency && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+            ₹
+          </span>
+        )}
+        <Input
+          type="number"
+          value={localValue}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
           step={step}
-          onValueChange={handleSliderChange}
+          className={`h-12 text-lg ${isCurrency ? "pl-8" : "pl-3"} ${
+            unit ? "pr-10" : ""
+          }`}
         />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{isCurrency ? `₹${min.toLocaleString()}` : `${min}${unit || ''}`}</span>
-          <span>{isCurrency ? `₹${max.toLocaleString()}` : `${max}${unit || ''}`}</span>
-        </div>
+        {unit && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+            {unit}
+          </span>
+        )}
       </div>
     </div>
   );

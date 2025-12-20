@@ -73,7 +73,6 @@ const SWPCalculator: React.FC = () => {
 
       let yearlyWithdrawn = 0;
       let yearlyReturns = 0;
-      // let yearStartBalance = currentBalance; // Unused variable removed
 
       for (let period = 1; period <= periodsPerYear; period++) {
         const periodIndex = (year - 1) * periodsPerYear + period;
@@ -292,7 +291,7 @@ const SWPCalculator: React.FC = () => {
                       label={`Withdrawal (${withdrawalFrequency === "monthly" ? "Per Month" : "Per Year"})`}
                       value={withdrawalAmount}
                       onChange={setWithdrawalAmount}
-                      min={0}
+                      min={withdrawalType === "percentage" ? 0.1 : 0}
                       max={withdrawalType === "percentage" ? 100 : 1000000000} 
                       step={0.01}
                       isCurrency={withdrawalType === "rupees"}

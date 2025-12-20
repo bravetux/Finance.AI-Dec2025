@@ -29,47 +29,66 @@ import {
 
 const COLORS = ["#10b981", "#3b82f6"];
 
+type InvestmentType = "sip" | "lumpsum" | "both";
+
 const SIPCalculator = () => {
+  const [investmentType, setInvestmentType] = useState<InvestmentType>("sip");
   const [monthlyInvestment, setMonthlyInvestment] = useState(5000);
+  const [initialInvestment, setInitialInvestment] = useState(100000);
   const [expectedReturn, setExpectedReturn] = useState(12);
   const [timePeriod, setTimePeriod] = useState(10);
 
   const { totalInvestment, estimatedReturns, totalValue, chartData } = useMemo(() => {
     const monthlyRate = expectedReturn / 12 / 100;
+    const annualRate = expectedReturn / 100;
     const months = timePeriod * 12;
-    const invested = monthlyInvestment * months;
-    
-    // Future Value formula for SIP: P * [ (1+i)^n - 1 ] * (1+i) / i
-    const futureValue =
-      (monthlyInvestment *
-        (Math.pow(1 + monthlyRate, months) - 1) *
-        (1 + monthlyRate)) /
-      monthlyRate;
 
-    const returns = futureValue - invested;
+    const calculateValues = (numYears: number) => {
+      const numMonths = numYears * 12;
+      let invested = 0;
+      let lumpsumFV = 0;
+      let sipFV = 0;
+
+      if (investmentType === "lumpsum" || investmentType === "both") {
+        invested += initialInvestment;
+        // Lumpsum FV: P * (1 + r)^n
+        lumpsumFV = initialInvestment * Math.pow(1 + monthlyRate, numMonths);
+      }
+
+      if (investmentType === "sip" || investmentType === "both") {
+        invested += monthlyInvestment * numMonths;
+        // SIP FV: P * [ (1+i)^n - 1 ] * (1+i) / i
+        if (numMonths > 0) {
+          sipFV = (monthlyInvestment * (Math.pow(1 + monthlyRate, numMonths) - 1) * (1 + monthlyRate)) / monthlyRate;
+        }
+      }
+
+      const totalValueAtYear = lumpsumFV + sipFV;
+      return {
+        invested: Math.round(invested),
+        total: Math.round(totalValueAtYear),
+        returns: Math.round(totalValueAtYear - invested)
+      };
+    };
 
     const data = [];
     for (let i = 0; i <= timePeriod; i++) {
-      const currentMonths = i * 12;
-      const currentInvested = monthlyInvestment * currentMonths;
-      const currentTotal = currentMonths === 0 ? 0 : 
-        (monthlyInvestment * (Math.pow(1 + monthlyRate, currentMonths) - 1) * (1 + monthlyRate)) / monthlyRate;
-      
+      const vals = calculateValues(i);
       data.push({
         year: i,
-        invested: Math.round(currentInvested),
-        returns: Math.round(currentTotal - currentInvested),
-        total: Math.round(currentTotal),
+        ...vals
       });
     }
 
+    const finalValues = calculateValues(timePeriod);
+
     return {
-      totalInvestment: Math.round(invested),
-      estimatedReturns: Math.round(returns),
-      totalValue: Math.round(futureValue),
+      totalInvestment: finalValues.invested,
+      estimatedReturns: finalValues.returns,
+      totalValue: finalValues.total,
       chartData: data,
     };
-  }, [monthlyInvestment, expectedReturn, timePeriod]);
+  }, [monthlyInvestment, initialInvestment, expectedReturn, timePeriod, investmentType]);
 
   const pieData = [
     { name: "Invested Amount", value: totalInvestment },
@@ -88,9 +107,9 @@ const SIPCalculator = () => {
     <div className="container mx-auto py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">SIP Calculator</h1>
+          <h1 className="text-3xl font-bold">Investment Calculator</h1>
           <p className="text-muted-foreground">
-            Calculate how much wealth you can create through Systematic Investment Plan
+            Plan your wealth creation through SIP, Lumpsum, or both
           </p>
         </div>
 
@@ -100,15 +119,40 @@ const SIPCalculator = () => {
               <CardTitle>Investment Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="monthlyInvestment">Monthly Investment (₹)</Label>
-                <Input
-                  id="monthlyInvestment"
-                  type="number"
-                  value={monthlyInvestment}
-                  onChange={(e) => setMonthlyInvestment(Number(e.target.value))}
-                />
+              <div className="space-y-4">
+                <Label>Investment Type</Label>
+                <Tabs value={investmentType} onValueChange={(v) => setInvestmentType(v as InvestmentType)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="sip">SIP</TabsTrigger>
+                    <TabsTrigger value="lumpsum">Lumpsum</TabsTrigger>
+                    <TabsTrigger value="both">Both</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
+
+              {(investmentType === "lumpsum" || investmentType === "both") && (
+                <div className="space-y-2">
+                  <Label htmlFor="initialInvestment">Initial Lumpsum (₹)</Label>
+                  <Input
+                    id="initialInvestment"
+                    type="number"
+                    value={initialInvestment}
+                    onChange={(e) => setInitialInvestment(Number(e.target.value))}
+                  />
+                </div>
+              )}
+
+              {(investmentType === "sip" || investmentType === "both") && (
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyInvestment">Monthly Investment (₹)</Label>
+                  <Input
+                    id="monthlyInvestment"
+                    type="number"
+                    value={monthlyInvestment}
+                    onChange={(e) => setMonthlyInvestment(Number(e.target.value))}
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="expectedReturn">Expected Return Rate (p.a %)</Label>

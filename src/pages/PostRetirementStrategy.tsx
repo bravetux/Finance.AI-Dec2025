@@ -41,11 +41,17 @@ const PostRetirementStrategy: React.FC = () => {
   useEffect(() => {
     const loadData = () => {
       try {
-        // Load corpus from "Can You Retire Now?"
+        // Load corpus from "Can You Retire Now?" (the "one already displayed")
         const canRetireData = JSON.parse(localStorage.getItem('canRetireNowData') || '{}');
-        setInitialCorpus(canRetireData.corpus || 0);
+        const baseCorpus = canRetireData.corpus || 0;
 
-        // Load retirement details from Retirement Dashboard
+        // Load Liquid Assets Future Total Value from FutureValueCalculator
+        const liquidFutureValueTotal = JSON.parse(localStorage.getItem('liquidFutureValueTotal') || '0');
+
+        // Combined Projected Corpus at Retirement
+        setInitialCorpus(baseCorpus + liquidFutureValueTotal);
+
+        // Load retirement details from Retirement Dashboard for expense calculation
         const retirementData = JSON.parse(localStorage.getItem('retirementData') || '{}');
         const currentAge = retirementData.currentAge || 0;
         const retAge = retirementData.retirementAge || 0;
@@ -134,8 +140,14 @@ const PostRetirementStrategy: React.FC = () => {
       
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Starting Corpus</CardTitle><Wallet className="h-4 w-4 text-muted-foreground" /></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{formatCurrency(initialCorpus)}</div><p className="text-xs text-muted-foreground">From 'Can You Retire Now?'</p></CardContent>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Projected Corpus at Retirement</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(initialCorpus)}</div>
+            <p className="text-[10px] text-muted-foreground italic mt-1">Includes Liquid Assets FV & Saved Corpus</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Withdrawal Expense (FV)</CardTitle><Banknote className="h-4 w-4 text-muted-foreground" /></CardHeader>

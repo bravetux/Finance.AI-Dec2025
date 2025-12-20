@@ -432,8 +432,8 @@ const SWPCalculator: React.FC = () => {
                      <TabsTrigger value="line"><LineChartIcon className="w-4 h-4 mr-2"/> Projection</TabsTrigger>
                   </TabsList>
                   
-                  <div className="h-[300px] w-full print:h-[300px]">
-                    <TabsContent value="pie" className="h-full m-0" forceMount={true} hidden={false}> 
+                  <div className="h-[300px] w-full print:h-[300px] mb-8">
+                    <TabsContent value="pie" className="h-full m-0"> 
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -464,7 +464,7 @@ const SWPCalculator: React.FC = () => {
                             <XAxis 
                                 dataKey="label" 
                                 tick={{fontSize: 12}} 
-                                tickFormatter={(val) => val.replace('Year ', '')} // Shorten label
+                                tickFormatter={(val) => val.replace('Year ', '')} 
                             />
                             <YAxis 
                                 tickFormatter={formatCurrencyCompact} 

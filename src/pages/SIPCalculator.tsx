@@ -6,6 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   AreaChart,
   Area,
   XAxis,
@@ -220,6 +228,34 @@ const SIPCalculator = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Yearly Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead>Invested Amount</TableHead>
+                  <TableHead>Est. Returns</TableHead>
+                  <TableHead className="text-right">Total Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {chartData.filter(d => d.year !== 0).map((row) => (
+                  <TableRow key={row.year}>
+                    <TableCell className="font-medium">Year {row.year}</TableCell>
+                    <TableCell>{formatCurrency(row.invested)}</TableCell>
+                    <TableCell className="text-emerald-600">{formatCurrency(row.returns)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatCurrency(row.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

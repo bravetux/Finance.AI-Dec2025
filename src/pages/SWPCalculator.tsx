@@ -46,51 +46,53 @@ const SWPCalculator = () => {
     let currentBalance = initialInvestment;
     let totalWithdrawn = 0;
     let currentMonthlyWithdrawal = monthlyWithdrawal;
-    const data = [];
+    const yearlyData = [];
     
-    data.push({
-      month: 0,
-      balance: Math.round(currentBalance),
-      withdrawn: 0,
-    });
-
-    const maxMonths = calculationType === "finalValue" ? years * 12 : 1200; // Cap at 100 years
+    const maxYears = calculationType === "finalValue" ? years : 100;
     let monthsElapsed = 0;
 
-    for (let i = 1; i <= maxMonths; i++) {
-      const interest = currentBalance * monthlyRate;
-      currentBalance = currentBalance + interest - currentMonthlyWithdrawal;
-      totalWithdrawn += currentMonthlyWithdrawal;
-      
-      if (currentBalance <= 0) {
-        currentBalance = 0;
-        monthsElapsed = i;
-        if (i % 12 === 0 || i === monthsElapsed) {
-          data.push({
-            month: i / 12,
-            balance: Math.round(currentBalance),
-            withdrawn: Math.round(totalWithdrawn),
-          });
+    for (let y = 1; y <= maxYears; y++) {
+      const beginningCorpus = currentBalance;
+      let annualInterest = 0;
+      let annualWithdrawal = 0;
+
+      for (let m = 1; m <= 12; m++) {
+        const interest = currentBalance * monthlyRate;
+        const possibleWithdrawal = Math.min(currentBalance + interest, currentMonthlyWithdrawal);
+        
+        annualInterest += interest;
+        annualWithdrawal += possibleWithdrawal;
+        currentBalance = currentBalance + interest - possibleWithdrawal;
+        monthsElapsed++;
+
+        if (currentBalance <= 0) {
+          currentBalance = 0;
+          break;
         }
-        break;
       }
 
-      if (i % 12 === 0) {
-        data.push({
-          month: i / 12,
-          balance: Math.round(currentBalance),
-          withdrawn: Math.round(totalWithdrawn),
-        });
-        // Increase withdrawal for the next year based on inflation
-        currentMonthlyWithdrawal *= (1 + inflationRate / 100);
-      }
-      monthsElapsed = i;
+      yearlyData.push({
+        year: y,
+        beginningCorpus: Math.round(beginningCorpus),
+        annualInterest: Math.round(annualInterest),
+        annualWithdrawal: Math.round(annualWithdrawal),
+        yearEndBalance: Math.round(currentBalance),
+        // For chart compatibility
+        balance: Math.round(currentBalance)
+      });
+
+      totalWithdrawn += annualWithdrawal;
+      
+      if (currentBalance <= 0) break;
+      
+      // Step up for next year
+      currentMonthlyWithdrawal *= (1 + inflationRate / 100);
     }
 
     return {
       totalWithdrawal: Math.round(totalWithdrawn),
       finalBalance: Math.round(currentBalance),
-      chartData: data,
+      chartData: yearlyData,
       durationMonths: monthsElapsed
     };
   }, [initialInvestment, monthlyWithdrawal, expectedReturn, inflationRate, years, calculationType]);
@@ -234,7 +236,7 @@ const SWPCalculator = () => {
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
                           <XAxis 
-                            dataKey="month" 
+                            dataKey="year" 
                             label={{ value: 'Years', position: 'insideBottom', offset: -5 }}
                           />
                           <YAxis 
@@ -294,16 +296,20 @@ const SWPCalculator = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Year</TableHead>
-                    <TableHead>Total Withdrawn</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead>Beginning Corpus</TableHead>
+                    <TableHead>Annual Withdrawal ({inflationRate}% Step-up)</TableHead>
+                    <TableHead>Expected Return ({expectedReturn}%)</TableHead>
+                    <TableHead className="text-right">Year-End Balance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {chartData.map((row) => (
-                    <TableRow key={row.month}>
-                      <TableCell className="font-medium">Year {row.month}</TableCell>
-                      <TableCell className="text-emerald-600">{formatCurrency(row.withdrawn)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(row.balance)}</TableCell>
+                    <TableRow key={row.year}>
+                      <TableCell className="font-medium">Year {row.year}</TableCell>
+                      <TableCell>{formatCurrency(row.beginningCorpus)}</TableCell>
+                      <TableCell className="text-red-500">{formatCurrency(row.annualWithdrawal)}</TableCell>
+                      <TableCell className="text-emerald-600">{formatCurrency(row.annualInterest)}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(row.yearEndBalance)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

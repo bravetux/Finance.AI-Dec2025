@@ -38,9 +38,16 @@ const SIPCalculator = () => {
   const [expectedReturn, setExpectedReturn] = useState(12);
   const [timePeriod, setTimePeriod] = useState(10);
 
+  const formatWithCommas = (value: number) => {
+    return new Intl.NumberFormat("en-IN").format(value);
+  };
+
+  const parseCommas = (value: string) => {
+    return Number(value.replace(/,/g, ""));
+  };
+
   const { totalInvestment, estimatedReturns, totalValue, chartData } = useMemo(() => {
     const monthlyRate = expectedReturn / 12 / 100;
-    const annualRate = expectedReturn / 100;
     const months = timePeriod * 12;
 
     const calculateValues = (numYears: number) => {
@@ -51,13 +58,11 @@ const SIPCalculator = () => {
 
       if (investmentType === "lumpsum" || investmentType === "both") {
         invested += initialInvestment;
-        // Lumpsum FV: P * (1 + r)^n
         lumpsumFV = initialInvestment * Math.pow(1 + monthlyRate, numMonths);
       }
 
       if (investmentType === "sip" || investmentType === "both") {
         invested += monthlyInvestment * numMonths;
-        // SIP FV: P * [ (1+i)^n - 1 ] * (1+i) / i
         if (numMonths > 0) {
           sipFV = (monthlyInvestment * (Math.pow(1 + monthlyRate, numMonths) - 1) * (1 + monthlyRate)) / monthlyRate;
         }
@@ -135,9 +140,12 @@ const SIPCalculator = () => {
                   <Label htmlFor="initialInvestment">Initial Lumpsum (₹)</Label>
                   <Input
                     id="initialInvestment"
-                    type="number"
-                    value={initialInvestment}
-                    onChange={(e) => setInitialInvestment(Number(e.target.value))}
+                    type="text"
+                    value={formatWithCommas(initialInvestment)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setInitialInvestment(Number(val));
+                    }}
                   />
                 </div>
               )}
@@ -147,9 +155,12 @@ const SIPCalculator = () => {
                   <Label htmlFor="monthlyInvestment">Monthly Investment (₹)</Label>
                   <Input
                     id="monthlyInvestment"
-                    type="number"
-                    value={monthlyInvestment}
-                    onChange={(e) => setMonthlyInvestment(Number(e.target.value))}
+                    type="text"
+                    value={formatWithCommas(monthlyInvestment)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setMonthlyInvestment(Number(val));
+                    }}
                   />
                 </div>
               )}

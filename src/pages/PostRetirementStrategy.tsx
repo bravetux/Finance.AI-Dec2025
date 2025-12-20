@@ -146,7 +146,7 @@ const PostRetirementStrategy: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(initialCorpus)}</div>
-            <p className="text-[10px] text-muted-foreground italic mt-1">Includes Liquid Assets FV & Saved Corpus</p>
+            <p className="text-[10px] text-muted-foreground italic mt-1">Includes Liquid Assets FV & Saved Corpus from </p>
           </CardContent>
         </Card>
         <Card>

@@ -201,7 +201,8 @@ const SWPCalculator: React.FC = () => {
                     value={withdrawalAmount}
                     onChange={setWithdrawalAmount}
                     min={0}
-                    max={withdrawalType === "percentage" ? 100 : 500000}
+                    // Removed the practical limit for rupees by setting a very high max
+                    max={withdrawalType === "percentage" ? 100 : 1000000000} 
                     step={withdrawalType === "percentage" ? 0.1 : 100}
                     isCurrency={withdrawalType === "rupees"}
                     unit={withdrawalType === "percentage" ? "%" : undefined}

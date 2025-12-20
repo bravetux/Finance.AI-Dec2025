@@ -142,6 +142,7 @@ const PostRetirementStrategy: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{formatCurrency(adjustedInitialWithdrawal)}</div>
             <p className="text-xs text-muted-foreground">Initial withdrawal at age {retirementAge}</p>
+            <p className="text-[10px] text-muted-foreground italic mt-1">Based on Retirement Dashboard expenses</p>
           </CardContent>
         </Card>
         <Card>

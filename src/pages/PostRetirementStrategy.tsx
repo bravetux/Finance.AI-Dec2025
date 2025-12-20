@@ -12,20 +12,21 @@ import { LineChart, Wallet, TrendingUp, Banknote } from "lucide-react";
 interface PostRetirementSettings {
   lifeExpectancy: number;
   inflation: number;
+  withdrawalAdjustment: number;
   allocations: { equity: number; fds: number; bonds: number; cash: number; };
   returns: { equity: number; fds: number; bonds: number; cash: number; };
 }
 
 const PostRetirementStrategy: React.FC = () => {
   const [initialCorpus, setInitialCorpus] = useState(0);
-  const [initialAnnualExpenses, setInitialAnnualExpenses] = useState(0);
+  const [calculatedFutureExpense, setCalculatedFutureExpense] = useState(0);
   const [retirementAge, setRetirementAge] = useState(0);
-  const [baseExpenseNow, setBaseExpenseNow] = useState(0);
 
   const [settings, setSettings] = useState<PostRetirementSettings>(() => {
     const defaultState: PostRetirementSettings = {
       lifeExpectancy: 85,
       inflation: 6,
+      withdrawalAdjustment: 100,
       allocations: { equity: 30, fds: 40, bonds: 25, cash: 5 },
       returns: { equity: 12, fds: 7, bonds: 8, cash: 2.5 },
     };
@@ -52,13 +53,12 @@ const PostRetirementStrategy: React.FC = () => {
         const inflation = retirementData.inflation || 6;
 
         setRetirementAge(retAge);
-        setBaseExpenseNow(currentExpenses);
 
         // Compute Future Value of expenses at Retirement Age
         const yearsToRetire = Math.max(0, retAge - currentAge);
         const futureExpense = currentExpenses * Math.pow(1 + inflation / 100, yearsToRetire);
         
-        setInitialAnnualExpenses(futureExpense);
+        setCalculatedFutureExpense(futureExpense);
       } catch (e) {
         console.error("Failed to load data for post-retirement strategy", e);
       }
@@ -91,14 +91,18 @@ const PostRetirementStrategy: React.FC = () => {
     );
   }, [settings.allocations, settings.returns, totalAllocation]);
 
+  const adjustedInitialWithdrawal = useMemo(() => {
+    return calculatedFutureExpense * (settings.withdrawalAdjustment / 100);
+  }, [calculatedFutureExpense, settings.withdrawalAdjustment]);
+
   const simulation = useMemo(() => {
-    if (initialCorpus <= 0 || initialAnnualExpenses <= 0 || totalAllocation !== 100) {
+    if (initialCorpus <= 0 || adjustedInitialWithdrawal <= 0 || totalAllocation !== 100) {
       return { projections: [], yearsLasted: 0, finalCorpus: initialCorpus };
     }
 
     const projections = [];
     let corpus = initialCorpus;
-    let withdrawal = initialAnnualExpenses;
+    let withdrawal = adjustedInitialWithdrawal;
     const maxYears = Math.max(0, settings.lifeExpectancy - retirementAge);
 
     for (let year = 1; year <= maxYears; year++) {
@@ -120,7 +124,7 @@ const PostRetirementStrategy: React.FC = () => {
     }
 
     return { projections, yearsLasted: projections.length, finalCorpus: corpus };
-  }, [initialCorpus, initialAnnualExpenses, retirementAge, settings, weightedAvgReturn, totalAllocation]);
+  }, [initialCorpus, adjustedInitialWithdrawal, retirementAge, settings, weightedAvgReturn, totalAllocation]);
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
@@ -136,8 +140,8 @@ const PostRetirementStrategy: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Withdrawal Expense (FV)</CardTitle><Banknote className="h-4 w-4 text-muted-foreground" /></CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{formatCurrency(initialAnnualExpenses)}</div>
-            <p className="text-xs text-muted-foreground">Annual cost at age {retirementAge}</p>
+            <div className="text-2xl font-bold text-orange-600">{formatCurrency(adjustedInitialWithdrawal)}</div>
+            <p className="text-xs text-muted-foreground">Initial withdrawal at age {retirementAge}</p>
           </CardContent>
         </Card>
         <Card>
@@ -161,6 +165,22 @@ const PostRetirementStrategy: React.FC = () => {
               <AllocationPieChart data={settings.allocations} />
               
               <div className="w-full max-w-sm space-y-6 pt-6 border-t">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="withdrawal-slider" className="font-semibold text-orange-600">Withdrawal Adjustment (%)</Label>
+                    <span className="text-lg font-bold text-orange-600">{settings.withdrawalAdjustment}%</span>
+                  </div>
+                  <Slider 
+                    id="withdrawal-slider"
+                    value={[settings.withdrawalAdjustment]} 
+                    onValueChange={(val) => handleSettingsChange("withdrawalAdjustment", val[0])} 
+                    min={50} 
+                    max={200} 
+                    step={5} 
+                  />
+                  <p className="text-xs text-muted-foreground">Adjust starting withdrawal relative to projected expenses ({formatCurrency(calculatedFutureExpense)}).</p>
+                </div>
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="inflation-slider" className="font-semibold">Post-Retirement Inflation (%)</Label>

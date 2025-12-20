@@ -34,6 +34,7 @@ const SWPCalculator = () => {
   const [initialInvestment, setInitialInvestment] = useState(1000000);
   const [monthlyWithdrawal, setMonthlyWithdrawal] = useState(10000);
   const [expectedReturn, setExpectedReturn] = useState(10);
+  const [inflationRate, setInflationRate] = useState(6);
   const [years, setYears] = useState(10);
 
   const formatWithCommas = (value: number) => {
@@ -44,6 +45,7 @@ const SWPCalculator = () => {
     const monthlyRate = expectedReturn / 12 / 100;
     let currentBalance = initialInvestment;
     let totalWithdrawn = 0;
+    let currentMonthlyWithdrawal = monthlyWithdrawal;
     const data = [];
     
     data.push({
@@ -52,13 +54,13 @@ const SWPCalculator = () => {
       withdrawn: 0,
     });
 
-    const maxMonths = calculationType === "finalValue" ? years * 12 : 1200; // Cap at 100 years for duration mode
+    const maxMonths = calculationType === "finalValue" ? years * 12 : 1200; // Cap at 100 years
     let monthsElapsed = 0;
 
     for (let i = 1; i <= maxMonths; i++) {
       const interest = currentBalance * monthlyRate;
-      currentBalance = currentBalance + interest - monthlyWithdrawal;
-      totalWithdrawn += monthlyWithdrawal;
+      currentBalance = currentBalance + interest - currentMonthlyWithdrawal;
+      totalWithdrawn += currentMonthlyWithdrawal;
       
       if (currentBalance <= 0) {
         currentBalance = 0;
@@ -79,6 +81,8 @@ const SWPCalculator = () => {
           balance: Math.round(currentBalance),
           withdrawn: Math.round(totalWithdrawn),
         });
+        // Increase withdrawal for the next year based on inflation
+        currentMonthlyWithdrawal *= (1 + inflationRate / 100);
       }
       monthsElapsed = i;
     }
@@ -89,7 +93,7 @@ const SWPCalculator = () => {
       chartData: data,
       durationMonths: monthsElapsed
     };
-  }, [initialInvestment, monthlyWithdrawal, expectedReturn, years, calculationType]);
+  }, [initialInvestment, monthlyWithdrawal, expectedReturn, inflationRate, years, calculationType]);
 
   const pieData = [
     { name: "Final Balance", value: finalBalance },
@@ -160,6 +164,17 @@ const SWPCalculator = () => {
                     value={expectedReturn}
                     onChange={(e) => setExpectedReturn(Number(e.target.value))}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="inflationRate">Expected Inflation Rate (p.a %)</Label>
+                  <Input
+                    id="inflationRate"
+                    type="number"
+                    value={inflationRate}
+                    onChange={(e) => setInflationRate(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">Adjusts withdrawal amount annually</p>
                 </div>
 
                 {calculationType === "finalValue" && (

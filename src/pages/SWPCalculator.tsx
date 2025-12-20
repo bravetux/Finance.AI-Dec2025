@@ -73,17 +73,13 @@ const SWPCalculator: React.FC = () => {
 
       let yearlyWithdrawn = 0;
       let yearlyReturns = 0;
-      let yearStartBalance = currentBalance;
+      // let yearStartBalance = currentBalance; // Unused variable removed
 
       for (let period = 1; period <= periodsPerYear; period++) {
         const periodIndex = (year - 1) * periodsPerYear + period;
         
-        // If already depleted, just fill 0s if we need strictly rigid arrays, 
-        // but normally we break. However, to keep report array consistent with requested time:
         if (currentBalance <= 0.1) { 
            if (depletionPeriod === -1) depletionPeriod = periodIndex - 1;
-           // We can either break or continue with 0s. 
-           // Continuing with 0s allows the table to show "0" balance for the rest of the term.
         }
 
         // 1. Calculate Withdrawal Amount
@@ -134,9 +130,6 @@ const SWPCalculator: React.FC = () => {
           depletionPeriod = year * periodsPerYear;
       }
     }
-
-    // Filter reports if we want to stop exactly when money runs out (optional, based on UX)
-    // For now, let's keep the full report but we'll use depletionPeriod to calculate longevity.
     
     return {
       totalInvestment: P,
@@ -177,11 +170,6 @@ const SWPCalculator: React.FC = () => {
         if (data.monthlyReport.length > 0) {
             data.monthlyReport = data.monthlyReport.slice(0, data.depletionPeriod);
         }
-        
-        // Adjust totals for the sliced period?
-        // Actually generateSWPReport accumulates totals. 
-        // If we ran for 60 years but money ran out in 10, the totals are already correct 
-        // because withdrawals stop happening when balance is 0.
     }
 
     return data;
@@ -306,7 +294,7 @@ const SWPCalculator: React.FC = () => {
                       onChange={setWithdrawalAmount}
                       min={0}
                       max={withdrawalType === "percentage" ? 100 : 1000000000} 
-                      step={withdrawalType === "percentage" ? 0.1 : 100}
+                      step={0.01}
                       isCurrency={withdrawalType === "rupees"}
                       unit={withdrawalType === "percentage" ? "%" : undefined}
                     />

@@ -1,265 +1,226 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { Calculator } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
-const SIPCalculator: React.FC = () => {
-  // State for SIP Calculator
-  const [monthlyInvestment, setMonthlyInvestment] = useState(25000);
-  const [sipReturnRate, setSipReturnRate] = useState(12);
-  const [sipTimePeriod, setSipTimePeriod] = useState(10);
+const COLORS = ["#10b981", "#3b82f6"];
 
-  // State for Lumpsum Calculator
-  const [lumpsumInvestment, setLumpsumInvestment] = useState(1000000);
-  const [lumpsumReturnRate, setLumpsumReturnRate] = useState(12);
-  const [lumpsumTimePeriod, setLumpsumTimePeriod] = useState(10);
+const SIPCalculator = () => {
+  const [monthlyInvestment, setMonthlyInvestment] = useState(5000);
+  const [expectedReturn, setExpectedReturn] = useState(12);
+  const [timePeriod, setTimePeriod] = useState(10);
 
-  // State for Lumpsum + SIP Calculator
-  const [comboLumpsum, setComboLumpsum] = useState(500000);
-  const [comboMonthlyInvestment, setComboMonthlyInvestment] = useState(10000);
-  const [comboReturnRate, setComboReturnRate] = useState(12);
-  const [comboTimePeriod, setComboTimePeriod] = useState(10);
-
-  const sipCalculations = useMemo(() => {
-    const P = monthlyInvestment;
-    const i = sipReturnRate / 12 / 100;
-    const n = sipTimePeriod * 12;
-
-    if (i === 0) {
-      const totalValue = P * n;
-      return { investedAmount: totalValue, estimatedReturns: 0, totalValue };
-    }
-
-    const totalValue = P * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
-    const investedAmount = P * n;
-    const estimatedReturns = totalValue - investedAmount;
-
-    return { investedAmount, estimatedReturns, totalValue };
-  }, [monthlyInvestment, sipReturnRate, sipTimePeriod]);
-
-  const lumpsumCalculations = useMemo(() => {
-    const P = lumpsumInvestment;
-    const r = lumpsumReturnRate / 100;
-    const n = lumpsumTimePeriod;
-
-    const totalValue = P * Math.pow(1 + r, n);
-    const investedAmount = P;
-    const estimatedReturns = totalValue - investedAmount;
-
-    return { investedAmount, estimatedReturns, totalValue };
-  }, [lumpsumInvestment, lumpsumReturnRate, lumpsumTimePeriod]);
-
-  const comboCalculations = useMemo(() => {
-    const L = comboLumpsum;
-    const S = comboMonthlyInvestment;
-    const i = comboReturnRate / 12 / 100;
-    const n = comboTimePeriod * 12;
-
-    if (n <= 0) {
-      const invested = L + S * n;
-      return { investedAmount: invested, estimatedReturns: 0, totalValue: invested };
-    }
-
-    const fvLumpsum = L * Math.pow(1 + i, n);
-    const fvSip = i === 0 ? S * n : S * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+  const { totalInvestment, estimatedReturns, totalValue, chartData } = useMemo(() => {
+    const monthlyRate = expectedReturn / 12 / 100;
+    const months = timePeriod * 12;
+    const invested = monthlyInvestment * months;
     
-    const totalValue = fvLumpsum + fvSip;
-    const investedAmount = L + (S * n);
-    const estimatedReturns = totalValue - investedAmount;
+    // Future Value formula for SIP: P * [ (1+i)^n - 1 ] * (1+i) / i
+    const futureValue =
+      (monthlyInvestment *
+        (Math.pow(1 + monthlyRate, months) - 1) *
+        (1 + monthlyRate)) /
+      monthlyRate;
 
-    return { investedAmount, estimatedReturns, totalValue };
-  }, [comboLumpsum, comboMonthlyInvestment, comboReturnRate, comboTimePeriod]);
+    const returns = futureValue - invested;
 
-  const sipChartData = [
-    { name: "Invested amount", value: sipCalculations.investedAmount },
-    { name: "Est. returns", value: sipCalculations.estimatedReturns },
+    const data = [];
+    for (let i = 0; i <= timePeriod; i++) {
+      const currentMonths = i * 12;
+      const currentInvested = monthlyInvestment * currentMonths;
+      const currentTotal = currentMonths === 0 ? 0 : 
+        (monthlyInvestment * (Math.pow(1 + monthlyRate, currentMonths) - 1) * (1 + monthlyRate)) / monthlyRate;
+      
+      data.push({
+        year: i,
+        invested: Math.round(currentInvested),
+        returns: Math.round(currentTotal - currentInvested),
+        total: Math.round(currentTotal),
+      });
+    }
+
+    return {
+      totalInvestment: Math.round(invested),
+      estimatedReturns: Math.round(returns),
+      totalValue: Math.round(futureValue),
+      chartData: data,
+    };
+  }, [monthlyInvestment, expectedReturn, timePeriod]);
+
+  const pieData = [
+    { name: "Invested Amount", value: totalInvestment },
+    { name: "Est. Returns", value: estimatedReturns },
   ];
-
-  const lumpsumChartData = [
-    { name: "Invested amount", value: lumpsumCalculations.investedAmount },
-    { name: "Est. returns", value: lumpsumCalculations.estimatedReturns },
-  ];
-
-  const comboChartData = [
-    { name: "Invested amount", value: comboCalculations.investedAmount },
-    { name: "Est. returns", value: comboCalculations.estimatedReturns },
-  ];
-
-  const COLORS = ["#E0E7FF", "#4F46E5"];
 
   const formatCurrency = (value: number) => {
-    return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Calculator className="h-8 w-8" />
-        SIP & Lumpsum Calculator
-      </h1>
+    <div className="container mx-auto py-10 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">SIP Calculator</h1>
+          <p className="text-muted-foreground">
+            Calculate how much wealth you can create through Systematic Investment Plan
+          </p>
+        </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Tabs defaultValue="sip">
-            <TabsList className="grid w-full grid-cols-3 md:w-1/2">
-              <TabsTrigger value="sip">SIP</TabsTrigger>
-              <TabsTrigger value="lumpsum">Lumpsum</TabsTrigger>
-              <TabsTrigger value="combo">Lumpsum + SIP</TabsTrigger>
-            </TabsList>
-            
-            {/* SIP Calculator Content */}
-            <TabsContent value="sip">
-              <div className="grid md:grid-cols-2 gap-8 mt-6">
-                <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Monthly investment</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(monthlyInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[monthlyInvestment]} onValueChange={(val) => setMonthlyInvestment(val[0])} min={500} max={50000000} step={500} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{sipReturnRate}%</span>
-                    </div>
-                    <Slider value={[sipReturnRate]} onValueChange={(val) => setSipReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{sipTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[sipTimePeriod]} onValueChange={(val) => setSipTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Investment Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="monthlyInvestment">Monthly Investment (₹)</Label>
+                <Input
+                  id="monthlyInvestment"
+                  type="number"
+                  value={monthlyInvestment}
+                  onChange={(e) => setMonthlyInvestment(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expectedReturn">Expected Return Rate (p.a %)</Label>
+                <Input
+                  id="expectedReturn"
+                  type="number"
+                  value={expectedReturn}
+                  onChange={(e) => setExpectedReturn(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="timePeriod">Time Period (Years)</Label>
+                <Input
+                  id="timePeriod"
+                  type="number"
+                  value={timePeriod}
+                  onChange={(e) => setTimePeriod(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="pt-6 space-y-4 border-t">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Invested Amount</span>
+                  <span className="font-semibold text-lg">{formatCurrency(totalInvestment)}</span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={sipChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value">
-                        {sipChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                      </Pie>
-                      <Legend iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="w-full max-w-sm mt-6 space-y-2 text-lg">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Invested amount</span><span className="font-medium">{formatCurrency(sipCalculations.investedAmount)}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Est. returns</span><span className="font-medium">{formatCurrency(sipCalculations.estimatedReturns)}</span></div>
-                    <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">Total value</span><span className="font-bold text-xl">{formatCurrency(sipCalculations.totalValue)}</span></div>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Estimated Returns</span>
+                  <span className="font-semibold text-lg text-emerald-600">{formatCurrency(estimatedReturns)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="font-bold">Total Value</span>
+                  <span className="font-bold text-2xl text-primary">{formatCurrency(totalValue)}</span>
                 </div>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
 
-            {/* Lumpsum Calculator Content */}
-            <TabsContent value="lumpsum">
-              <div className="grid md:grid-cols-2 gap-8 mt-6">
-                <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Total investment</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(lumpsumInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[lumpsumInvestment]} onValueChange={(val) => setLumpsumInvestment(val[0])} min={10000} max={100000000} step={10000} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Growth Visualization</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="growth" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="growth">Wealth Growth</TabsTrigger>
+                  <TabsTrigger value="allocation">Allocation</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="growth">
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis 
+                          dataKey="year" 
+                          label={{ value: 'Years', position: 'insideBottom', offset: -5 }}
+                        />
+                        <YAxis 
+                          tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => formatCurrency(value)}
+                          labelFormatter={(label) => `Year ${label}`}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="total"
+                          stroke="#3b82f6"
+                          fillOpacity={1}
+                          fill="url(#colorTotal)"
+                          name="Total Value"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="invested"
+                          stroke="#94a3b8"
+                          fill="transparent"
+                          name="Invested Amount"
+                          strokeDasharray="5 5"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{lumpsumReturnRate}%</span>
-                    </div>
-                    <Slider value={[lumpsumReturnRate]} onValueChange={(val) => setLumpsumReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{lumpsumTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[lumpsumTimePeriod]} onValueChange={(val) => setLumpsumTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={lumpsumChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value">
-                        {lumpsumChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                      </Pie>
-                      <Legend iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="w-full max-w-sm mt-6 space-y-2 text-lg">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Invested amount</span><span className="font-medium">{formatCurrency(lumpsumCalculations.investedAmount)}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Est. returns</span><span className="font-medium">{formatCurrency(lumpsumCalculations.estimatedReturns)}</span></div>
-                    <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">Total value</span><span className="font-bold text-xl">{formatCurrency(lumpsumCalculations.totalValue)}</span></div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
+                </TabsContent>
 
-            {/* Lumpsum + SIP Calculator Content */}
-            <TabsContent value="combo">
-              <div className="grid md:grid-cols-2 gap-8 mt-6">
-                <div className="space-y-8">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Initial Lumpsum</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(comboLumpsum)}
-                      </span>
-                    </div>
-                    <Slider value={[comboLumpsum]} onValueChange={(val) => setComboLumpsum(val[0])} min={0} max={5000000} step={10000} />
+                <TabsContent value="allocation">
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Monthly Investment (SIP)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">
-                        {formatCurrency(comboMonthlyInvestment)}
-                      </span>
-                    </div>
-                    <Slider value={[comboMonthlyInvestment]} onValueChange={(val) => setComboMonthlyInvestment(val[0])} min={0} max={500000} step={500} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Expected return rate (p.a)</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{comboReturnRate}%</span>
-                    </div>
-                    <Slider value={[comboReturnRate]} onValueChange={(val) => setComboReturnRate(val[0])} min={1} max={30} step={0.5} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="font-medium">Time period</label>
-                      <span className="text-lg font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{comboTimePeriod} Yr</span>
-                    </div>
-                    <Slider value={[comboTimePeriod]} onValueChange={(val) => setComboTimePeriod(val[0])} min={1} max={40} step={1} />
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={comboChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value">
-                        {comboChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                      </Pie>
-                      <Legend iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="w-full max-w-sm mt-6 space-y-2 text-lg">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Invested amount</span><span className="font-medium">{formatCurrency(comboCalculations.investedAmount)}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Est. returns</span><span className="font-medium">{formatCurrency(comboCalculations.estimatedReturns)}</span></div>
-                    <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">Total value</span><span className="font-bold text-xl">{formatCurrency(comboCalculations.totalValue)}</span></div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

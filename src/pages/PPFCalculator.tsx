@@ -102,7 +102,7 @@ const PPFCalculator: React.FC = () => {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Calculator className="h-8 w-8" />
-        PPF & Lumpsum Calculator
+        PPF & Accumulated Amount Calculator
       </h1>
 
       <Card>

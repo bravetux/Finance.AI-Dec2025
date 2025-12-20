@@ -22,6 +22,7 @@ const SWPCalculator: React.FC = () => {
   // State for SWP Calculator
   const [initialInvestment, setInitialInvestment] = useState(5000000);
   const [returnRate, setReturnRate] = useState(8);
+  const [inflationRate, setInflationRate] = useState(0); // New state for Inflation
   const [timePeriod, setTimePeriod] = useState(15);
   const [withdrawalAmount, setWithdrawalAmount] = useState(30000);
   const [withdrawalFrequency, setWithdrawalFrequency] = useState<Frequency>("monthly");
@@ -38,6 +39,7 @@ const SWPCalculator: React.FC = () => {
   const generateSWPReport = (
     P: number, // Initial Investment
     r_annual: number, // Annual Return Rate (as a decimal)
+    inflation_rate: number, // Annual Inflation Rate (percentage)
     t_years: number, // Time Period (in years)
     w_value: number, // Withdrawal Value (Rupees or Percentage)
     w_type: WithdrawalType,
@@ -53,11 +55,18 @@ const SWPCalculator: React.FC = () => {
     let currentBalance = P;
     let totalWithdrawn = 0;
     let totalReturns = 0;
+    
+    // Track the current withdrawal amount (it may increase due to inflation)
+    let currentWithdrawalBase = w_value;
 
     for (let year = 1; year <= t_years; year++) {
+      // Apply annual inflation adjustment to the withdrawal amount at the start of each year (after year 1)
+      if (year > 1 && w_type === "rupees" && inflation_rate > 0) {
+        currentWithdrawalBase = currentWithdrawalBase * (1 + inflation_rate / 100);
+      }
+
       let yearlyWithdrawn = 0;
       let yearlyReturns = 0;
-      let yearStartBalance = currentBalance;
 
       for (let period = 1; period <= periodsPerYear; period++) {
         const periodIndex = (year - 1) * periodsPerYear + period;
@@ -66,9 +75,10 @@ const SWPCalculator: React.FC = () => {
         // 1. Calculate Withdrawal Amount
         let withdrawal;
         if (w_type === "rupees") {
-          withdrawal = w_value;
+          withdrawal = currentWithdrawalBase;
         } else { // percentage
           // Withdrawal is a percentage of the current balance
+          // Inflation is usually not applied explicitly here as the corpus dynamics handle it
           withdrawal = currentBalance * (w_value / 100);
         }
         
@@ -129,12 +139,13 @@ const SWPCalculator: React.FC = () => {
     return generateSWPReport(
       initialInvestment,
       r_annual,
+      inflationRate,
       timePeriod,
       withdrawalAmount,
       withdrawalType,
       withdrawalFrequency
     );
-  }, [initialInvestment, returnRate, timePeriod, withdrawalAmount, withdrawalType, withdrawalFrequency]);
+  }, [initialInvestment, returnRate, inflationRate, timePeriod, withdrawalAmount, withdrawalType, withdrawalFrequency]);
 
   const calculations = {
     totalInvestment: swpReportData.totalInvestment,
@@ -174,15 +185,28 @@ const SWPCalculator: React.FC = () => {
                 step={100000}
                 isCurrency
               />
-              <CalculatorInput
-                label="Expected Return Rate (p.a)"
-                value={returnRate}
-                onChange={setReturnRate}
-                min={1}
-                max={30}
-                step={0.5}
-                unit="%"
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <CalculatorInput
+                  label="Return Rate (p.a)"
+                  value={returnRate}
+                  onChange={setReturnRate}
+                  min={1}
+                  max={30}
+                  step={0.5}
+                  unit="%"
+                />
+                <div className={withdrawalType === "percentage" ? "opacity-50 pointer-events-none" : ""}>
+                   <CalculatorInput
+                    label="Inflation Rate (p.a)"
+                    value={inflationRate}
+                    onChange={setInflationRate}
+                    min={0}
+                    max={20}
+                    step={0.5}
+                    unit="%"
+                  />
+                </div>
+              </div>
               <CalculatorInput
                 label="Time Period"
                 value={timePeriod}
@@ -201,7 +225,6 @@ const SWPCalculator: React.FC = () => {
                     value={withdrawalAmount}
                     onChange={setWithdrawalAmount}
                     min={0}
-                    // Removed the practical limit for rupees by setting a very high max
                     max={withdrawalType === "percentage" ? 100 : 1000000000} 
                     step={withdrawalType === "percentage" ? 0.1 : 100}
                     isCurrency={withdrawalType === "rupees"}

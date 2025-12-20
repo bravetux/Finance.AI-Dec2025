@@ -85,7 +85,7 @@ const PostRetirementStrategy: React.FC = () => {
     const projections = [];
     let corpus = initialCorpus;
     let withdrawal = initialAnnualExpenses;
-    const maxYears = settings.lifeExpectancy - currentAge;
+    const maxYears = Math.max(0, settings.lifeExpectancy - currentAge);
 
     for (let year = 1; year <= maxYears; year++) {
       const age = currentAge + year;
@@ -136,8 +136,40 @@ const PostRetirementStrategy: React.FC = () => {
             <p className={`text-sm pt-2 ${totalAllocation !== 100 ? 'text-red-500 font-bold' : 'text-muted-foreground'}`}>Total Allocation: {totalAllocation}% {totalAllocation !== 100 && "(Must be 100%)"}</p>
         </CardHeader>
         <CardContent className="grid gap-8 md:grid-cols-2">
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center space-y-8">
               <AllocationPieChart data={settings.allocations} />
+              
+              <div className="w-full max-w-sm space-y-6 pt-6 border-t">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="inflation-slider" className="font-semibold">Annual Inflation (%)</Label>
+                    <span className="text-lg font-bold text-blue-600">{settings.inflation}%</span>
+                  </div>
+                  <Slider 
+                    id="inflation-slider"
+                    value={[settings.inflation]} 
+                    onValueChange={(val) => handleSettingsChange("inflation", val[0])} 
+                    min={0} 
+                    max={15} 
+                    step={0.5} 
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="life-expectancy-slider" className="font-semibold">Life Expectancy (Age)</Label>
+                    <span className="text-lg font-bold text-blue-600">{settings.lifeExpectancy}</span>
+                  </div>
+                  <Slider 
+                    id="life-expectancy-slider"
+                    value={[settings.lifeExpectancy]} 
+                    onValueChange={(val) => handleSettingsChange("lifeExpectancy", val[0])} 
+                    min={70} 
+                    max={100} 
+                    step={1} 
+                  />
+                </div>
+              </div>
             </div>
             <div className="space-y-6">
               {Object.keys(settings.allocations).map((key) => {

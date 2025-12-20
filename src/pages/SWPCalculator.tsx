@@ -2,9 +2,12 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calculator, Clock, Wallet } from "lucide-react";
+import { Calculator, Clock, Wallet, Download, Printer, LineChart as LineChartIcon } from "lucide-react";
 import CalculatorInput from "@/components/CalculatorInput";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Legend, 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip 
+} from "recharts";
 import {
   Select,
   SelectContent,
@@ -13,8 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import SWPReportTable, { SWPReportRow } from "@/components/SWPReportTable";
+import { Button } from "@/components/ui/button";
 
 type Frequency = "monthly" | "annual";
 type WithdrawalType = "rupees" | "percentage";
@@ -35,6 +39,12 @@ const SWPCalculator: React.FC = () => {
 
   const formatCurrency = (value: number) => {
     return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  };
+
+  const formatCurrencyCompact = (value: number) => {
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
+    if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
+    return `₹${(value / 1000).toFixed(0)}k`;
   };
 
   // --- Report Generation Logic ---
@@ -203,27 +213,71 @@ const SWPCalculator: React.FC = () => {
   };
 
   // --- Chart Data ---
-  const chartData = [
+  const pieChartData = [
     { name: "Total Withdrawn", value: calculations.totalWithdrawn },
     { name: "Final Corpus", value: calculations.finalCorpus },
   ];
 
   const COLORS = ["#4F46E5", "#E0E7FF"];
 
+  // --- Export Functions ---
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadCSV = () => {
+    const headers = ["Period", "Withdrawal", "Returns Earned", "Balance"];
+    const rows = swpReportData.yearlyReport.map(row => [
+      row.label,
+      row.withdrawal.toFixed(2),
+      row.returnsEarned.toFixed(2),
+      row.endBalance.toFixed(2)
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n" 
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "swp_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // --- Component Render ---
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Calculator className="h-8 w-8" />
-        SWP Calculator
-      </h1>
+      <div className="flex justify-between items-center print:hidden">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Calculator className="h-8 w-8" />
+          SWP Calculator
+        </h1>
+        <div className="flex gap-2">
+           <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
+             <Download className="w-4 h-4 mr-2" /> CSV
+           </Button>
+           <Button variant="outline" size="sm" onClick={handlePrint}>
+             <Printer className="w-4 h-4 mr-2" /> PDF / Print
+           </Button>
+        </div>
+      </div>
+      
+      {/* Print-only Header */}
+      <div className="hidden print:block mb-8">
+        <h1 className="text-2xl font-bold mb-2">SWP Calculation Report</h1>
+        <p className="text-gray-500 text-sm">Generated on {new Date().toLocaleDateString()}</p>
+      </div>
 
       <Tabs 
         defaultValue="value" 
         value={calcMode} 
         onValueChange={(v) => setCalcMode(v as CalcMode)}
-        className="w-full"
+        className="w-full print:hidden"
       >
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="value" className="flex items-center gap-2">
@@ -237,7 +291,7 @@ const SWPCalculator: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-8">
+              <div className="space-y-8 print:hidden">
                 {/* Inputs */}
                 <CalculatorInput
                   label="Initial Investment (Corpus)"
@@ -333,8 +387,8 @@ const SWPCalculator: React.FC = () => {
                 </div>
               </div>
               
-              {/* Results and Chart */}
-              <div className="flex flex-col items-center">
+              {/* Results and Charts */}
+              <div className="flex flex-col items-center w-full">
                 {/* Dynamic Result Display */}
                 {calcMode === "longevity" ? (
                    <div className="w-full max-w-sm mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center space-y-2">
@@ -348,7 +402,7 @@ const SWPCalculator: React.FC = () => {
                    </div>
                 ) : null}
 
-                <div className="w-full max-w-sm space-y-4 text-lg">
+                <div className="w-full max-w-sm space-y-4 text-lg mb-8">
                   <div className="flex justify-between border-b pb-2">
                     <span className="font-bold">Initial Investment</span>
                     <span className="font-bold text-xl text-indigo-600">
@@ -364,7 +418,6 @@ const SWPCalculator: React.FC = () => {
                     <span className="font-medium">{formatCurrency(calculations.totalWithdrawn)}</span>
                   </div>
                   
-                  {/* Final Corpus - Only relevant if not 0 */}
                   <div className="flex justify-between border-t pt-4 mt-4">
                     <span className="font-bold">Final Corpus Value</span>
                     <span className={`font-bold text-xl ${calculations.finalCorpus > 0 ? "text-green-600" : "text-gray-500"}`}>
@@ -373,33 +426,87 @@ const SWPCalculator: React.FC = () => {
                   </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={250} className="mt-8">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Tabs defaultValue="pie" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4 print:hidden">
+                     <TabsTrigger value="pie"><PieChart className="w-4 h-4 mr-2"/> Summary</TabsTrigger>
+                     <TabsTrigger value="line"><LineChartIcon className="w-4 h-4 mr-2"/> Projection</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="h-[300px] w-full print:h-[300px]">
+                    <TabsContent value="pie" className="h-full m-0" forceMount={true} hidden={false}> 
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={pieChartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={70}
+                              outerRadius={100}
+                              fill="#8884d8"
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />
+                          </PieChart>
+                        </ResponsiveContainer>
+                    </TabsContent>
+                    <TabsContent value="line" className="h-full m-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={swpReportData.yearlyReport}
+                            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis 
+                                dataKey="label" 
+                                tick={{fontSize: 12}} 
+                                tickFormatter={(val) => val.replace('Year ', '')} // Shorten label
+                            />
+                            <YAxis 
+                                tickFormatter={formatCurrencyCompact} 
+                                tick={{fontSize: 12}}
+                                width={60}
+                            />
+                            <RechartsTooltip 
+                                formatter={(value: number) => formatCurrency(value)}
+                                labelStyle={{ color: '#333' }}
+                            />
+                            <Legend />
+                            <Line 
+                                type="monotone" 
+                                dataKey="endBalance" 
+                                name="Balance" 
+                                stroke="#4F46E5" 
+                                strokeWidth={3} 
+                                dot={false} 
+                            />
+                            <Line 
+                                type="monotone" 
+                                dataKey="withdrawal" 
+                                name="Yearly Withdrawal" 
+                                stroke="#82ca9d" 
+                                strokeWidth={2} 
+                                dot={false} 
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                    </TabsContent>
+                  </div>
+                </Tabs>
               </div>
             </div>
             
             {/* SWP Report Table Integration */}
-            <SWPReportTable 
-              yearlyData={swpReportData.yearlyReport} 
-              monthlyData={swpReportData.monthlyReport} 
-            />
+            <div className="mt-8">
+               <SWPReportTable 
+                  yearlyData={swpReportData.yearlyReport} 
+                  monthlyData={swpReportData.monthlyReport} 
+               />
+            </div>
           </CardContent>
         </Card>
       </Tabs>

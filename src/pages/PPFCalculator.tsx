@@ -110,7 +110,7 @@ const PPFCalculator: React.FC = () => {
           <Tabs defaultValue="yearly">
             <TabsList className="grid w-full grid-cols-3 md:w-1/2">
               <TabsTrigger value="yearly">Yearly Investment</TabsTrigger>
-              <TabsTrigger value="lumpsum">Lumpsum</TabsTrigger>
+              <TabsTrigger value="lumpsum">Accumulated</TabsTrigger>
               <TabsTrigger value="combo">Accumulated + Yearly</TabsTrigger>
             </TabsList>
 

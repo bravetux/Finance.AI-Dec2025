@@ -26,6 +26,7 @@ interface Asset {
   roi: number;
   futureValue: number;
   isIncomeSource?: boolean;
+  incomeType?: 'monthly' | 'annual';
 }
 
 // Helper function to calculate future value for compounding assets
@@ -34,9 +35,9 @@ const calculateFutureValue = (pv: number, r: number, t: number) => {
 };
 
 // Helper function to calculate accumulated future value for income sources (Annuity)
-const calculateAccumulatedFutureValue = (monthlyValue: number, r: number, t: number) => {
+const calculateAccumulatedFutureValue = (value: number, r: number, t: number, type: 'monthly' | 'annual') => {
   if (t <= 0) return 0;
-  const annualValue = monthlyValue * 12;
+  const annualValue = type === 'monthly' ? value * 12 : value;
   const rate = r / 100;
   if (rate === 0) return annualValue * t;
   // FV of an Ordinary Annuity: P * [((1 + r)^t - 1) / r]
@@ -94,13 +95,13 @@ const FutureValueCalculator: React.FC = () => {
         } catch { return []; }
       })();
 
-      const defaultAssets = [
+      const defaultAssets: any[] = [
         // Illiquid Assets
         { name: "Home Value", key: "homeValue", source: 'netWorth', roi: 6 },
         { name: "Other Real Estate", key: "otherRealEstate", source: 'netWorth', roi: 7 },
         { name: "Jewellery", key: "jewellery", source: 'netWorth', roi: 4 },
         
-        // Liquid Assets (Existing)
+        // Liquid Assets
         { name: "Sovereign Gold Bonds", key: "sovereignGoldBonds", source: 'netWorth', roi: 5 },
         { name: "ULIPs Surrender Value", key: "ulipsSurrenderValue", source: 'netWorth', roi: 8 },
         { name: "EPF / PPF / VPF", key: "epfPpfVpf", source: 'netWorth', roi: 7.1 },
@@ -115,14 +116,16 @@ const FutureValueCalculator: React.FC = () => {
         { name: "Cryptocurrency", key: "cryptocurrency", source: 'netWorth', roi: 15 },
         { name: "REITs", key: "reits", source: 'netWorth', roi: 9 },
 
-        // Liquid Assets (New from Cashflow/Finance Data - treated as Income Sources)
-        { name: "Business Income", key: "businessIncome", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "Rental Income Prop 1", key: "rentalProperty1", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "Rental Income Prop 2", key: "rentalProperty2", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "Rental Income Prop 3", key: "rentalProperty3", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "FD Interest Income", key: "fdInterest", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "Bond Income", key: "bondIncome", source: 'finance', roi: 7, isIncomeSource: true },
-        { name: "Dividend Income", key: "dividendIncome", source: 'finance', roi: 7, isIncomeSource: true },
+        // Monthly Income Sources
+        { name: "Business Income", key: "businessIncome", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'monthly' },
+        { name: "Rental Income Prop 1", key: "rentalProperty1", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'monthly' },
+        { name: "Rental Income Prop 2", key: "rentalProperty2", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'monthly' },
+        { name: "Rental Income Prop 3", key: "rentalProperty3", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'monthly' },
+        
+        // Annual Income Sources
+        { name: "FD Interest Income", key: "fdInterest", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'annual' },
+        { name: "Bond Income", key: "bondIncome", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'annual' },
+        { name: "Dividend Income", key: "dividendIncome", source: 'finance', roi: 7, isIncomeSource: true, incomeType: 'annual' },
       ];
 
       const newAssets = defaultAssets.map(defaultAsset => {
@@ -137,7 +140,7 @@ const FutureValueCalculator: React.FC = () => {
 
         const roi = savedAsset ? savedAsset.roi : defaultAsset.roi;
         const futureValue = defaultAsset.isIncomeSource 
-          ? calculateAccumulatedFutureValue(currentValue, roi, duration)
+          ? calculateAccumulatedFutureValue(currentValue, roi, duration, defaultAsset.incomeType)
           : calculateFutureValue(currentValue, roi, duration);
 
         return {
@@ -146,6 +149,7 @@ const FutureValueCalculator: React.FC = () => {
           roi,
           futureValue,
           isIncomeSource: defaultAsset.isIncomeSource,
+          incomeType: defaultAsset.incomeType,
         };
       });
       setAssets(newAssets);
@@ -175,7 +179,7 @@ const FutureValueCalculator: React.FC = () => {
       };
 
       updatedAsset.futureValue = updatedAsset.isIncomeSource
-        ? calculateAccumulatedFutureValue(updatedAsset.currentValue, updatedAsset.roi, duration)
+        ? calculateAccumulatedFutureValue(updatedAsset.currentValue, updatedAsset.roi, duration, updatedAsset.incomeType!)
         : calculateFutureValue(updatedAsset.currentValue, updatedAsset.roi, duration);
       
       newAssets[assetIndex] = updatedAsset;
@@ -186,10 +190,11 @@ const FutureValueCalculator: React.FC = () => {
   const illiquidAssetNames = ["Home Value", "Other Real Estate", "Jewellery"];
   
   const illiquidAssets = useMemo(() => assets.filter(asset => illiquidAssetNames.includes(asset.name)), [assets]);
-  const incomeAssets = useMemo(() => assets.filter(asset => asset.isIncomeSource), [assets]);
+  const monthlyIncomeAssets = useMemo(() => assets.filter(asset => asset.isIncomeSource && asset.incomeType === 'monthly'), [assets]);
+  const annualIncomeAssets = useMemo(() => assets.filter(asset => asset.isIncomeSource && asset.incomeType === 'annual'), [assets]);
   const liquidAssets = useMemo(() => assets.filter(asset => !illiquidAssetNames.includes(asset.name) && !asset.isIncomeSource), [assets]);
   
-  const totalLiquidFutureValue = useMemo(() => [...liquidAssets, ...incomeAssets].reduce((sum, asset) => sum + asset.futureValue, 0), [liquidAssets, incomeAssets]);
+  const totalLiquidFutureValue = useMemo(() => [...liquidAssets, ...monthlyIncomeAssets, ...annualIncomeAssets].reduce((sum, asset) => sum + asset.futureValue, 0), [liquidAssets, monthlyIncomeAssets, annualIncomeAssets]);
   const totalCurrentValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.currentValue, 0), [assets]);
   const totalFutureValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.futureValue, 0), [assets]);
   
@@ -258,7 +263,7 @@ const FutureValueCalculator: React.FC = () => {
     setTimeout(() => window.location.reload(), 1000);
   };
 
-  const AssetTable = ({ title, data, showMonthlyLabel }: { title: string, data: Asset[], showMonthlyLabel?: boolean }) => {
+  const AssetTable = ({ title, data, label }: { title: string, data: Asset[], label: string }) => {
     const tableCurrentTotal = data.reduce((sum, asset) => sum + asset.currentValue, 0);
     const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
 
@@ -272,7 +277,7 @@ const FutureValueCalculator: React.FC = () => {
                 <tr>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {showMonthlyLabel ? "Monthly Value (₹)" : "Current Value (₹)"}
+                    {label} (₹)
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI / Growth (%)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
@@ -296,7 +301,7 @@ const FutureValueCalculator: React.FC = () => {
                 <tr className="font-bold">
                   <td className="px-2 py-2 text-left text-sm">Total</td>
                   <td className="px-2 py-2 text-left text-sm">
-                    {showMonthlyLabel ? `₹${tableCurrentTotal.toLocaleString('en-IN')}` : "-"}
+                    {label !== "Current Value" ? `₹${tableCurrentTotal.toLocaleString('en-IN')}` : "-"}
                   </td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
@@ -306,7 +311,7 @@ const FutureValueCalculator: React.FC = () => {
               </tfoot>
             </table>
           </div>
-          {showMonthlyLabel && (
+          {label !== "Current Value" && (
             <p className="text-[10px] text-muted-foreground mt-2 italic">
               * Income sources are calculated as annual accumulations growing at the specified ROI.
             </p>
@@ -368,16 +373,17 @@ const FutureValueCalculator: React.FC = () => {
       </Card>
 
       <div className="grid gap-6">
-        <AssetTable title="Illiquid Assets" data={illiquidAssets} />
-        <AssetTable title="Liquid Assets" data={liquidAssets} />
-        <AssetTable title="Monthly Income Sources (Accumulated)" data={incomeAssets} showMonthlyLabel />
+        <AssetTable title="Illiquid Assets" data={illiquidAssets} label="Current Value" />
+        <AssetTable title="Liquid Assets" data={liquidAssets} label="Current Value" />
+        <AssetTable title="Monthly Income Sources (Accumulated)" data={monthlyIncomeAssets} label="Monthly Value" />
+        <AssetTable title="Annual Income Sources (Accumulated)" data={annualIncomeAssets} label="Annual Value" />
 
         <Card>
           <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="font-medium">Total Current Monthly Income:</span><span className="font-bold">₹{assets.filter(a => a.isIncomeSource).reduce((sum, a) => sum + a.currentValue, 0).toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span className="font-medium">Total Current Monthly Income:</span><span className="font-bold">₹{monthlyIncomeAssets.reduce((sum, a) => sum + a.currentValue, 0).toLocaleString("en-IN")}</span></div>
                 <div className="flex justify-between"><span className="font-medium">Average ROI/Growth:</span><span className="font-bold">{averageRoi.toFixed(2)}%</span></div>
               </div>
               <div className="space-y-2">

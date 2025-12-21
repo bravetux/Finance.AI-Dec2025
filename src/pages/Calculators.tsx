@@ -55,6 +55,14 @@ const calculatorList = [
     category: "Investing"
   },
   {
+    name: "Percentage Calculator",
+    description: "Perform common percentage calculations like X% of Y, percentage change, and more.",
+    path: "/dashboard/percentage-calculator",
+    icon: Percent,
+    color: "text-red-500",
+    category: "General"
+  },
+  {
     name: "Interest Calculator",
     description: "Calculate Simple or Compound interest with precision using durations or specific date ranges.",
     path: "/dashboard/interest-calculator",

@@ -157,6 +157,14 @@ const navItems = [
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Handshake, type: 'link' },
         ]
       },
+      { 
+        name: "General", 
+        icon: Calculator,
+        type: 'section',
+        children: [
+          { name: "Percentage Calculator", path: "/dashboard/percentage-calculator", icon: Percent, type: 'link' },
+        ]
+      },
       { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
       { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
       { 

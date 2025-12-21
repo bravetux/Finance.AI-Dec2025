@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Upload, Trash2, Info } from "lucide-react";
+import { Download, Upload, Trash2 } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
 import {
   AlertDialog,
@@ -62,10 +62,18 @@ const FutureValueCalculator: React.FC = () => {
 
   useEffect(() => {
     const initializeAssets = () => {
-      // Fetch the latest Net Worth data directly from localStorage
+      // Fetch Net Worth data
       const netWorthData = (() => {
         try {
           const savedData = localStorage.getItem('netWorthData');
+          return savedData ? JSON.parse(savedData) : {};
+        } catch { return {}; }
+      })();
+
+      // Fetch Finance data (Income sources)
+      const financeData = (() => {
+        try {
+          const savedData = localStorage.getItem('finance-data');
           return savedData ? JSON.parse(savedData) : {};
         } catch { return {}; }
       })();
@@ -79,28 +87,46 @@ const FutureValueCalculator: React.FC = () => {
       })();
 
       const defaultAssets = [
-        { name: "Home Value", key: "homeValue", roi: 6 },
-        { name: "Other Real Estate", key: "otherRealEstate", roi: 7 },
-        { name: "Jewellery", key: "jewellery", roi: 4 },
-        { name: "Sovereign Gold Bonds", key: "sovereignGoldBonds", roi: 5 },
-        { name: "ULIPs Surrender Value", key: "ulipsSurrenderValue", roi: 8 },
-        { name: "EPF / PPF / VPF", key: "epfPpfVpf", roi: 7.1 },
-        { name: "Fixed Deposits", key: "fixedDeposits", roi: 6.5 },
-        { name: "Debt Funds", key: "debtFunds", roi: 7.5 },
-        { name: "Domestic Stocks", key: "domesticStocks", roi: 12 },
-        { name: "Domestic Mutual Funds", key: "domesticMutualFunds", roi: 11 },
-        { name: "International Funds", key: "internationalFunds", roi: 10 },
-        { name: "Small Cases", key: "smallCases", roi: 13 },
-        { name: "Savings Balance", key: "savingsBalance", roi: 4 },
-        { name: "Precious Metals", key: "preciousMetals", roi: 6 },
-        { name: "Cryptocurrency", key: "cryptocurrency", roi: 15 },
-        { name: "REITs", key: "reits", roi: 9 },
+        // Illiquid Assets
+        { name: "Home Value", key: "homeValue", source: 'netWorth', roi: 6 },
+        { name: "Other Real Estate", key: "otherRealEstate", source: 'netWorth', roi: 7 },
+        { name: "Jewellery", key: "jewellery", source: 'netWorth', roi: 4 },
+        
+        // Liquid Assets (Existing)
+        { name: "Sovereign Gold Bonds", key: "sovereignGoldBonds", source: 'netWorth', roi: 5 },
+        { name: "ULIPs Surrender Value", key: "ulipsSurrenderValue", source: 'netWorth', roi: 8 },
+        { name: "EPF / PPF / VPF", key: "epfPpfVpf", source: 'netWorth', roi: 7.1 },
+        { name: "Fixed Deposits", key: "fixedDeposits", source: 'netWorth', roi: 6.5 },
+        { name: "Debt Funds", key: "debtFunds", source: 'netWorth', roi: 7.5 },
+        { name: "Domestic Stocks", key: "domesticStocks", source: 'netWorth', roi: 12 },
+        { name: "Domestic Mutual Funds", key: "domesticMutualFunds", source: 'netWorth', roi: 11 },
+        { name: "International Funds", key: "internationalFunds", source: 'netWorth', roi: 10 },
+        { name: "Small Cases", key: "smallCases", source: 'netWorth', roi: 13 },
+        { name: "Savings Balance", key: "savingsBalance", source: 'netWorth', roi: 4 },
+        { name: "Precious Metals", key: "preciousMetals", source: 'netWorth', roi: 6 },
+        { name: "Cryptocurrency", key: "cryptocurrency", source: 'netWorth', roi: 15 },
+        { name: "REITs", key: "reits", source: 'netWorth', roi: 9 },
+
+        // Liquid Assets (New from Cashflow/Finance Data)
+        { name: "Business Income", key: "businessIncome", source: 'finance', roi: 8 },
+        { name: "Rental Income Prop 1", key: "rentalProperty1", source: 'finance', roi: 5 },
+        { name: "Rental Income Prop 2", key: "rentalProperty2", source: 'finance', roi: 5 },
+        { name: "Rental Income Prop 3", key: "rentalProperty3", source: 'finance', roi: 5 },
+        { name: "FD Interest Income", key: "fdInterest", source: 'finance', roi: 6 },
+        { name: "Bond Income", key: "bondIncome", source: 'finance', roi: 7 },
+        { name: "Dividend Income", key: "dividendIncome", source: 'finance', roi: 10 },
       ];
 
       const newAssets = defaultAssets.map(defaultAsset => {
         const savedAsset = futureValueData.find((a: { name: string, roi: number }) => a.name === defaultAsset.name);
-        // Use the value from netWorthData, which is synced from other pages
-        const currentValue = netWorthData[defaultAsset.key] || 0;
+        
+        let currentValue = 0;
+        if (defaultAsset.source === 'netWorth') {
+          currentValue = netWorthData[defaultAsset.key] || 0;
+        } else if (defaultAsset.source === 'finance') {
+          currentValue = financeData[defaultAsset.key] || 0;
+        }
+
         const roi = savedAsset ? savedAsset.roi : defaultAsset.roi;
         const futureValue = calculateFutureValue(currentValue, roi, duration);
 
@@ -114,17 +140,15 @@ const FutureValueCalculator: React.FC = () => {
       setAssets(newAssets);
     };
     
-    // Run initialization on mount and whenever duration changes
     initializeAssets();
     
-    // Also listen for storage events to update if NetWorthCalculator runs in the background
     const handleStorageChange = () => {
         initializeAssets();
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
 
-  }, [duration]); // Re-calculate when duration changes
+  }, [duration]);
 
   const handleInputChange = (assetName: string, field: 'roi', value: string) => {
     if (value.length > 4) return;
@@ -152,6 +176,8 @@ const FutureValueCalculator: React.FC = () => {
 
   const illiquidAssetNames = ["Home Value", "Other Real Estate", "Jewellery"];
   const liquidAssets = useMemo(() => assets.filter(asset => !illiquidAssetNames.includes(asset.name)), [assets]);
+  const illiquidAssets = useMemo(() => assets.filter(asset => illiquidAssetNames.includes(asset.name)), [assets]);
+  
   const totalLiquidFutureValue = useMemo(() => liquidAssets.reduce((sum, asset) => sum + asset.futureValue, 0), [liquidAssets]);
   const totalCurrentValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.currentValue, 0), [assets]);
   const totalFutureValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.futureValue, 0), [assets]);
@@ -221,16 +247,14 @@ const FutureValueCalculator: React.FC = () => {
     setTimeout(() => window.location.reload(), 1000);
   };
 
-  const illiquidAssets = useMemo(() => assets.filter(asset => illiquidAssetNames.includes(asset.name)), [assets]);
-
   const growth = useMemo(() => {
     if (totalCurrentValue === 0) return 0;
     return ((totalFutureValue / totalCurrentValue) - 1) * 100;
   }, [totalFutureValue, totalCurrentValue]);
 
   const AssetTable = ({ title, data }: { title: string, data: Asset[] }) => {
-    const totalCurrentValue = data.reduce((sum, asset) => sum + asset.currentValue, 0);
-    const totalFutureValue = data.reduce((sum, asset) => sum + asset.futureValue, 0);
+    const tableCurrentTotal = data.reduce((sum, asset) => sum + asset.currentValue, 0);
+    const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
 
     return (
       <Card>
@@ -240,7 +264,7 @@ const FutureValueCalculator: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset / Income Source</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Current Value (₹)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI (%)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
@@ -262,11 +286,11 @@ const FutureValueCalculator: React.FC = () => {
                 <tr className="font-bold">
                   <td className="px-2 py-2 text-left text-sm">Total</td>
                   <td className="px-2 py-2 text-left text-sm">
-                    ₹{totalCurrentValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    ₹{tableCurrentTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
-                    ₹{totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    ₹{tableFutureTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>
@@ -330,7 +354,7 @@ const FutureValueCalculator: React.FC = () => {
 
       <div className="grid gap-6">
         <AssetTable title="Illiquid Assets" data={illiquidAssets} />
-        <AssetTable title="Liquid Assets" data={liquidAssets} />
+        <AssetTable title="Liquid Assets & Income Sources" data={liquidAssets} />
 
         <Card>
           <CardHeader><CardTitle>Summary</CardTitle></CardHeader>

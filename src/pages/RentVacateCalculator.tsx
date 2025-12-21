@@ -149,7 +149,7 @@ const RentVacateCalculator: React.FC = () => {
 
   const exportData = () => {
     const blob = new Blob([JSON.stringify(inputs, null, 2)], { type: 'application/json' });
-    saveAs(blob, 'rent-vacate-data.json');
+    saveAs(blob, 'rental-vacate-data.json');
     showSuccess('Vacate calculator data exported!');
   };
 
@@ -221,7 +221,7 @@ const RentVacateCalculator: React.FC = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Home className="h-6 w-6" />
-          Rent Vacate Calculator
+          Rental House Vacate Calculator
         </h1>
         <div className="flex gap-2">
           <AlertDialog>

@@ -175,7 +175,7 @@ const navItems = [
         type: 'section',
         children: [
           { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
-          { name: "Rent Vacate Calculator", path: "/dashboard/rent-vacate-calculator", icon: DoorOpen, type: 'link' },
+          { name: "Rental House Vacate Calculator", path: "/dashboard/rent-vacate-calculator", icon: DoorOpen, type: 'link' },
         ]
       },
     ]

@@ -19,7 +19,8 @@ import {
   BarChart3,
   Percent,
   CreditCard,
-  PieChart
+  PieChart,
+  DoorOpen
 } from "lucide-react";
 
 const calculatorList = [
@@ -142,6 +143,14 @@ const calculatorList = [
     icon: Handshake,
     color: "text-amber-500",
     category: "Interest"
+  },
+  {
+    name: "Rental House Vacate",
+    description: "Calculate security deposit refunds after deducting repairs, utilities, and arrears.",
+    path: "/dashboard/rent-vacate-calculator",
+    icon: DoorOpen,
+    color: "text-blue-400",
+    category: "General"
   },
   {
     name: "Expense Planner",

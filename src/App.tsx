@@ -47,6 +47,7 @@ import CarAffordableCalculator from "./pages/CarAffordableCalculator";
 import P2PLendingCalculator from "./pages/P2PLendingCalculator";
 import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
 import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
+import InvestmentCalculator from "./pages/InvestmentCalculator";
 import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
 
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="swp-calculator" element={<SWPCalculator />} />
               <Route path="ppf-calculator" element={<PPFCalculator />} />
               <Route path="epf-calculator" element={<EPFCalculator />} />
+              <Route path="investment-calculator" element={<InvestmentCalculator />} />
               <Route path="goal-calculator" element={<GoalCalculator />} />
               <Route path="roi-calculator" element={<ROICalculator />} />
               <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />

@@ -15,7 +15,8 @@ import {
   Car, 
   Handshake, 
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  BarChart3
 } from "lucide-react";
 
 const calculatorList = [
@@ -26,6 +27,14 @@ const calculatorList = [
     icon: Target,
     color: "text-blue-500",
     category: "Planning"
+  },
+  {
+    name: "Investment Growth",
+    description: "Advanced growth projection with Lumpsum, monthly SIP, annual Step-up and tax impacts.",
+    path: "/dashboard/investment-calculator",
+    icon: BarChart3,
+    color: "text-indigo-600",
+    category: "Investing"
   },
   {
     name: "SIP Calculator",

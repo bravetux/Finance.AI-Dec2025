@@ -1,20 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCcw, Calculator, TrendingUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCcw, TrendingUp, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type CompoundingFrequency = "12" | "4" | "2" | "1";
 
 const CompoundInterestCalculator: React.FC = () => {
-  const [principal, setPrincipal] = useState<string>("");
-  const [monthlyDeposit, setMonthlyDeposit] = useState<string>("");
-  const [periodMonths, setPeriodMonths] = useState<string>("");
-  const [annualRate, setAnnualRate] = useState<string>("");
+  // Inputs
+  const [mode, setMode] = useState<"basic" | "advanced">("basic");
+  const [principal, setPrincipal] = useState<string>("100000");
+  const [monthlyDeposit, setMonthlyDeposit] = useState<string>("5000");
+  const [years, setYears] = useState<string>("10");
+  const [months, setMonths] = useState<string>("0");
+  const [annualRate, setAnnualRate] = useState<string>("10");
   const [compounding, setCompounding] = useState<CompoundingFrequency>("12");
   
   const [results, setResults] = useState<{
@@ -26,7 +31,8 @@ const CompoundInterestCalculator: React.FC = () => {
   const handleReset = () => {
     setPrincipal("");
     setMonthlyDeposit("");
-    setPeriodMonths("");
+    setYears("");
+    setMonths("");
     setAnnualRate("");
     setCompounding("12");
     setResults(null);
@@ -34,180 +40,192 @@ const CompoundInterestCalculator: React.FC = () => {
 
   const handleCalculate = () => {
     const P = parseFloat(principal) || 0;
-    const PMT = parseFloat(monthlyDeposit) || 0;
-    const totalMonths = parseInt(periodMonths) || 0;
+    const PMT = mode === "advanced" ? (parseFloat(monthlyDeposit) || 0) : 0;
+    const totalYears = (parseFloat(years) || 0) + (parseFloat(months) || 0) / 12;
+    const totalMonths = (parseFloat(years) || 0) * 12 + (parseFloat(months) || 0);
     const r = (parseFloat(annualRate) || 0) / 100;
-    const n = parseInt(compounding);
+    const n = mode === "advanced" ? parseInt(compounding) : 12; // Default basic to monthly compounding
 
-    if (totalMonths <= 0) return;
+    if (totalMonths <= 0 && totalYears <= 0) return;
 
-    // Simulation approach for highest accuracy with varying compounding vs deposit frequencies
-    let balance = P;
-    let totalInvested = P;
-    const monthlyRate = r / 12;
+    // Part 1: Future Value of Principal
+    // FV = P * (1 + r/n)^(n*t)
+    const FV_principal = P * Math.pow(1 + r / n, n * totalYears);
     
-    // We iterate month by month
-    for (let m = 1; m <= totalMonths; m++) {
-      // Add monthly deposit at start of month
-      balance += PMT;
-      totalInvested += PMT;
-      
-      // Apply interest if it's a compounding month
-      // Note: In real world, interest often accrues daily but for a standard calculator, 
-      // we usually apply the periodic rate.
-      const periodicRate = r / n;
-      const monthsPerCompound = 12 / n;
-      
-      if (m % monthsPerCompound === 0) {
-        // This is a simplified model where we apply interest on the current balance at compounding intervals
-        // For a more exact continuous/daily model, math varies, but this is standard for web calculators.
-        // However, a better way for "Monthly" compounding is just balance * (1 + r/12)
-        // Let's use the simple monthly compounding simulation for all if monthly deposits exist.
-      }
+    // Part 2: Future Value of Monthly Deposits (Annuity)
+    // We use the monthly rate for the PMT part to remain consistent with standard SIP/Deposit models
+    let FV_deposits = 0;
+    if (PMT > 0) {
+        const monthlyR = r / 12;
+        // FV = PMT * [((1 + r/12)^n - 1) / (r/12)] * (1 + r/12) -- Assuming start of month
+        FV_deposits = PMT * (Math.pow(1 + monthlyR, totalMonths) - 1) / monthlyR * (1 + monthlyR);
     }
 
-    // Standard Formula for Compound Interest with Monthly Deposits (assuming compounding matches deposits for simplicity in UI results)
-    // If compounding != monthly, the math is complex. Most online calculators default to simple monthly for the "Monthly Deposit" part.
-    
-    const t = totalMonths / 12;
-    const compoundFrequency = parseInt(compounding);
-    
-    // Part 1: Initial Principal
-    const FV_principal = P * Math.pow(1 + r / compoundFrequency, compoundFrequency * t);
-    
-    // Part 2: Monthly Deposits (Annuity)
-    // If compounding is monthly: PMT * [((1 + r/12)^n - 1) / (r/12)]
-    // If compounding is different, we usually assume the deposit compounding matches the selection.
-    const periodicRate = r / compoundFrequency;
-    const totalPeriods = compoundFrequency * t;
-    
-    // Adjusted deposit based on compounding frequency (if depositing monthly but compounding yearly, 
-    // it's effectively an annual deposit of 12*PMT roughly).
-    // To keep it consistent with standard calculators:
-    const monthlyR = r / 12;
-    const FV_deposits = PMT * (Math.pow(1 + monthlyR, totalMonths) - 1) / monthlyR * (1 + monthlyR);
-
     const finalBalance = FV_principal + FV_deposits;
-    const totalInterest = finalBalance - (P + (PMT * totalMonths));
+    const totalPrincipalInvested = P + (PMT * totalMonths);
+    const totalInterest = finalBalance - totalPrincipalInvested;
 
     setResults({
-      totalPrincipal: P + (PMT * totalMonths),
+      totalPrincipal: totalPrincipalInvested,
       totalInterest: totalInterest,
       finalBalance: finalBalance
     });
   };
 
+  // Trigger calculation whenever inputs change
+  useEffect(() => {
+    handleCalculate();
+  }, [mode, principal, monthlyDeposit, years, months, annualRate, compounding]);
+
   const formatCurrency = (val: number) => `₹${val.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-start">
-        <h1 className="text-4xl font-bold text-red-700">
-          Compound Interest Calculator
-        </h1>
-        <Button variant="outline" className="bg-gray-100">Advanced Version</Button>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-red-700">Compound Interest Calculator</h1>
+        <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleReset}><RefreshCcw className="mr-2 h-4 w-4" /> Reset</Button>
+        </div>
       </div>
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4 max-w-lg mx-auto">
-            <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="principal" className="text-right font-bold text-lg">Principal Amount</Label>
-              <Input
-                id="principal"
-                type="number"
-                value={principal}
-                onChange={(e) => setPrincipal(e.target.value)}
-                className="h-10"
-              />
+        <CardHeader className="pb-3">
+          <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Input Column */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="principal" className="font-semibold">Principal Amount (₹)</Label>
+                <Input
+                  id="principal"
+                  type="number"
+                  placeholder="e.g. 1,00,000"
+                  value={principal}
+                  onChange={(e) => setPrincipal(e.target.value)}
+                />
+              </div>
+
+              {mode === "advanced" && (
+                <div className="space-y-2">
+                  <Label htmlFor="deposit" className="font-semibold">Monthly Deposit (₹)</Label>
+                  <Input
+                    id="deposit"
+                    type="number"
+                    placeholder="e.g. 5,000"
+                    value={monthlyDeposit}
+                    onChange={(e) => setMonthlyDeposit(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="years" className="font-semibold">Years</Label>
+                  <Input
+                    id="years"
+                    type="number"
+                    value={years}
+                    onChange={(e) => setYears(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="months" className="font-semibold">Months</Label>
+                  <Input
+                    id="months"
+                    type="number"
+                    value={months}
+                    onChange={(e) => setMonths(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rate" className="font-semibold">Annual Interest Rate (%)</Label>
+                <Input
+                  id="rate"
+                  type="number"
+                  placeholder="e.g. 12"
+                  value={annualRate}
+                  onChange={(e) => setAnnualRate(e.target.value)}
+                />
+              </div>
+
+              {mode === "advanced" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="compounding" className="font-semibold">Compounding Frequency</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>How often interest is calculated and added back to the principal.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Select value={compounding} onValueChange={(v: CompoundingFrequency) => setCompounding(v)}>
+                    <SelectTrigger id="compounding">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">Monthly</SelectItem>
+                      <SelectItem value="4">Quarterly</SelectItem>
+                      <SelectItem value="2">Half-Yearly</SelectItem>
+                      <SelectItem value="1">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="deposit" className="text-right font-bold text-lg">Monthly Deposit</Label>
-              <Input
-                id="deposit"
-                type="number"
-                value={monthlyDeposit}
-                onChange={(e) => setMonthlyDeposit(e.target.value)}
-                className="h-10"
-              />
-            </div>
+            {/* Results Column */}
+            <div className="flex flex-col justify-center">
+              {results ? (
+                <div className="space-y-6 bg-muted/30 p-6 rounded-xl border border-primary/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <h3 className="font-bold text-lg">Results</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-muted-foreground">Total Principal</span>
+                      <span className="font-bold">{formatCurrency(results.totalPrincipal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-muted-foreground">Total Interest Earned</span>
+                      <span className="font-bold text-green-600">+{formatCurrency(results.totalInterest)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-lg font-bold">Final Balance</span>
+                      <span className="text-2xl font-black text-blue-600">{formatCurrency(results.finalBalance)}</span>
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="period" className="text-right font-bold text-lg">Period (month)</Label>
-              <Input
-                id="period"
-                type="number"
-                value={periodMonths}
-                onChange={(e) => setPeriodMonths(e.target.value)}
-                className="h-10"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="rate" className="text-right font-bold text-lg">Annual Interest Rate (%)</Label>
-              <Input
-                id="rate"
-                type="number"
-                value={annualRate}
-                onChange={(e) => setAnnualRate(e.target.value)}
-                className="h-10"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 items-center gap-4">
-              <Label htmlFor="compounding" className="text-right font-bold text-lg">Compounding</Label>
-              <Select value={compounding} onValueChange={(v: CompoundingFrequency) => setCompounding(v)}>
-                <SelectTrigger id="compounding" className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="12">Monthly</SelectItem>
-                  <SelectItem value="4">Quarterly</SelectItem>
-                  <SelectItem value="2">Half-Yearly</SelectItem>
-                  <SelectItem value="1">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-6">
-              <Button variant="outline" onClick={handleReset} className="h-12 text-lg bg-gray-100 hover:bg-gray-200">
-                Reset
-              </Button>
-              <Button onClick={handleCalculate} className="h-12 text-lg bg-gray-100 hover:bg-gray-200 text-black border">
-                Calculate
-              </Button>
+                  <p className="text-xs text-muted-foreground italic text-center pt-4">
+                    {mode === 'basic' 
+                        ? "* Calculation assumes monthly compounding for basic growth." 
+                        : `* Calculation based on ${parseInt(compounding) === 12 ? 'Monthly' : parseInt(compounding) === 4 ? 'Quarterly' : parseInt(compounding) === 2 ? 'Half-Yearly' : 'Yearly'} compounding.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground italic border-2 border-dashed rounded-xl p-8">
+                  Enter values to see calculation results...
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {results && (
-        <Card className="bg-muted/50 border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-green-600" />
-              Calculation Results
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground uppercase font-semibold">Total Principal</p>
-                <p className="text-2xl font-bold">{formatCurrency(results.totalPrincipal)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground uppercase font-semibold">Total Interest</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(results.totalInterest)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground uppercase font-semibold">Final Balance</p>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(results.finalBalance)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

@@ -64,81 +64,81 @@ const PercentageCalculator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Percent className="h-8 w-8 text-primary" />
+    <div className="max-w-5xl mx-auto space-y-4">
+      <h1 className="text-2xl font-bold flex items-center gap-2">
+        <Percent className="h-6 w-6 text-primary" />
         Percentage Calculator
       </h1>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Scenario 1 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">What is X% of Y?</CardTitle>
-            <CardDescription className="text-xs font-mono">(X/100) * Y</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-md">What is X% of Y?</CardTitle>
+            <CardDescription className="text-[10px] font-mono opacity-60">(X/100) * Y</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Input type="number" placeholder="X" value={s1X} onChange={(e) => setS1X(e.target.value)} className="w-24" />
-                <Label>% of</Label>
-                <Input type="number" placeholder="Y" value={s1Y} onChange={(e) => setS1Y(e.target.value)} className="w-32" />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={calculateS1} size="sm"><Calculator className="mr-2 h-4 w-4" /> Calculate</Button>
-                <Button variant="outline" size="sm" onClick={() => { setS1X(""); setS1Y(""); setS1Res(null); }}><RefreshCcw className="h-4 w-4" /></Button>
+          <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Input type="number" placeholder="X" value={s1X} onChange={(e) => setS1X(e.target.value)} className="w-20 h-8" />
+              <span>% of</span>
+              <Input type="number" placeholder="Y" value={s1Y} onChange={(e) => setS1Y(e.target.value)} className="w-24 h-8" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                <Button onClick={calculateS1} size="sm" className="h-8 px-2"><Calculator className="mr-1 h-3 w-3" /> Calc</Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => { setS1X(""); setS1Y(""); setS1Res(null); }}><RefreshCcw className="h-3 w-3" /></Button>
               </div>
               {s1Res !== null && (
-                <div className="text-lg font-bold text-primary">Result: {s1Res.toLocaleString()}</div>
+                <div className="text-sm font-bold text-primary">Result: {s1Res.toLocaleString()}</div>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Scenario 2 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">What percent is X of Y?</CardTitle>
-            <CardDescription className="text-xs font-mono">(X/Y) * 100</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-md">What percent is X of Y?</CardTitle>
+            <CardDescription className="text-[10px] font-mono opacity-60">(X/Y) * 100</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Input type="number" placeholder="X" value={s2X} onChange={(e) => setS2X(e.target.value)} className="w-24" />
-                <Label>of</Label>
-                <Input type="number" placeholder="Y" value={s2Y} onChange={(e) => setS2Y(e.target.value)} className="w-32" />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={calculateS2} size="sm"><Calculator className="mr-2 h-4 w-4" /> Calculate</Button>
-                <Button variant="outline" size="sm" onClick={() => { setS2X(""); setS2Y(""); setS2Res(null); }}><RefreshCcw className="h-4 w-4" /></Button>
+          <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Input type="number" placeholder="X" value={s2X} onChange={(e) => setS2X(e.target.value)} className="w-20 h-8" />
+              <span>is what % of</span>
+              <Input type="number" placeholder="Y" value={s2Y} onChange={(e) => setS2Y(e.target.value)} className="w-24 h-8" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                <Button onClick={calculateS2} size="sm" className="h-8 px-2"><Calculator className="mr-1 h-3 w-3" /> Calc</Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => { setS2X(""); setS2Y(""); setS2Res(null); }}><RefreshCcw className="h-3 w-3" /></Button>
               </div>
               {s2Res !== null && (
-                <div className="text-lg font-bold text-primary">Result: {s2Res.toFixed(2)}%</div>
+                <div className="text-sm font-bold text-primary">Result: {s2Res.toFixed(2)}%</div>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Scenario 3 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">What percentage change from X to Y?</CardTitle>
-            <CardDescription className="text-xs font-mono">((Y-X)/X) * 100</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-md">Percentage change from X to Y?</CardTitle>
+            <CardDescription className="text-[10px] font-mono opacity-60">((Y-X)/X) * 100</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Label>From</Label>
-                <Input type="number" placeholder="X" value={s3X} onChange={(e) => setS3X(e.target.value)} className="w-32" />
-                <Label>to</Label>
-                <Input type="number" placeholder="Y" value={s3Y} onChange={(e) => setS3Y(e.target.value)} className="w-32" />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={calculateS3} size="sm"><Calculator className="mr-2 h-4 w-4" /> Calculate</Button>
-                <Button variant="outline" size="sm" onClick={() => { setS3X(""); setS3Y(""); setS3Res(null); }}><RefreshCcw className="h-4 w-4" /></Button>
+          <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <span>From</span>
+              <Input type="number" placeholder="X" value={s3X} onChange={(e) => setS3X(e.target.value)} className="w-24 h-8" />
+              <span>to</span>
+              <Input type="number" placeholder="Y" value={s3Y} onChange={(e) => setS3Y(e.target.value)} className="w-24 h-8" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                <Button onClick={calculateS3} size="sm" className="h-8 px-2"><Calculator className="mr-1 h-3 w-3" /> Calc</Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => { setS3X(""); setS3Y(""); setS3Res(null); }}><RefreshCcw className="h-3 w-3" /></Button>
               </div>
               {s3Res !== null && (
-                <div className={`text-lg font-bold ${s3Res >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <div className={`text-sm font-bold ${s3Res >= 0 ? "text-green-600" : "text-red-600"}`}>
                   Result: {s3Res.toFixed(2)}%
                 </div>
               )}
@@ -147,50 +147,50 @@ const PercentageCalculator: React.FC = () => {
         </Card>
 
         {/* Scenario 4 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">X is Y% of what number?</CardTitle>
-            <CardDescription className="text-xs font-mono">X / (Y/100)</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-md">X is Y% of what number?</CardTitle>
+            <CardDescription className="text-[10px] font-mono opacity-60">X / (Y/100)</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Input type="number" placeholder="X" value={s4X} onChange={(e) => setS4X(e.target.value)} className="w-32" />
-                <Label>is</Label>
-                <Input type="number" placeholder="Y" value={s4Y} onChange={(e) => setS4Y(e.target.value)} className="w-24" />
-                <Label>% of</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={calculateS4} size="sm"><Calculator className="mr-2 h-4 w-4" /> Calculate</Button>
-                <Button variant="outline" size="sm" onClick={() => { setS4X(""); setS4Y(""); setS4Res(null); }}><RefreshCcw className="h-4 w-4" /></Button>
+          <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Input type="number" placeholder="X" value={s4X} onChange={(e) => setS4X(e.target.value)} className="w-24 h-8" />
+              <span>is</span>
+              <Input type="number" placeholder="Y" value={s4Y} onChange={(e) => setS4Y(e.target.value)} className="w-20 h-8" />
+              <span>% of ?</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                <Button onClick={calculateS4} size="sm" className="h-8 px-2"><Calculator className="mr-1 h-3 w-3" /> Calc</Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => { setS4X(""); setS4Y(""); setS4Res(null); }}><RefreshCcw className="h-3 w-3" /></Button>
               </div>
               {s4Res !== null && (
-                <div className="text-lg font-bold text-primary">Result: {s4Res.toLocaleString()}</div>
+                <div className="text-sm font-bold text-primary">Result: {s4Res.toLocaleString()}</div>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Scenario 5 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">What is X with change of Y%?</CardTitle>
-            <CardDescription className="text-xs font-mono">X * (1 + Y/100)</CardDescription>
+        <Card className="shadow-sm md:col-span-2 max-w-xl mx-auto w-full">
+          <CardHeader className="p-4 pb-2 text-center">
+            <CardTitle className="text-md">What is X with change of Y%?</CardTitle>
+            <CardDescription className="text-[10px] font-mono opacity-60">X * (1 + Y/100)</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Input type="number" placeholder="X" value={s5X} onChange={(e) => setS5X(e.target.value)} className="w-32" />
-                <Label>with</Label>
-                <Input type="number" placeholder="Y" value={s5Y} onChange={(e) => setS5Y(e.target.value)} className="w-24" />
-                <Label>% change</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={calculateS5} size="sm"><Calculator className="mr-2 h-4 w-4" /> Calculate</Button>
-                <Button variant="outline" size="sm" onClick={() => { setS5X(""); setS5Y(""); setS5Res(null); }}><RefreshCcw className="h-4 w-4" /></Button>
+          <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center justify-center gap-2 text-sm">
+              <Input type="number" placeholder="X" value={s5X} onChange={(e) => setS5X(e.target.value)} className="w-24 h-8" />
+              <span>with</span>
+              <Input type="number" placeholder="Y" value={s5Y} onChange={(e) => setS5Y(e.target.value)} className="w-20 h-8" />
+              <span>% change is ?</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                <Button onClick={calculateS5} size="sm" className="h-8 px-2"><Calculator className="mr-1 h-3 w-3" /> Calc</Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => { setS5X(""); setS5Y(""); setS5Res(null); }}><RefreshCcw className="h-3 w-3" /></Button>
               </div>
               {s5Res !== null && (
-                <div className="text-lg font-bold text-primary">Result: {s5Res.toLocaleString()}</div>
+                <div className="text-sm font-bold text-primary">Result: {s5Res.toLocaleString()}</div>
               )}
             </div>
           </CardContent>

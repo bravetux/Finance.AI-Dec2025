@@ -138,6 +138,9 @@ const navItems = [
         children: [
           { name: "Growth Calculator", path: "/dashboard/investment-calculator", icon: TrendingUp, type: 'link' },
           { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Repeat, type: 'link' },
+          { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
+          { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
+          { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
           { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Target, type: 'link' },
           { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
         ]
@@ -152,9 +155,6 @@ const navItems = [
         ]
       },
       { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
-      { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
-      { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
-      { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
       { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
       { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
       { 

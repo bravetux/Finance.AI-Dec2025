@@ -68,7 +68,7 @@ const calculatorList = [
     path: "/dashboard/swp-calculator",
     icon: CircleDollarSign,
     color: "text-orange-500",
-    category: "Retirement"
+    category: "Investing"
   },
   {
     name: "Compound Interest",
@@ -92,7 +92,7 @@ const calculatorList = [
     path: "/dashboard/ppf-calculator",
     icon: PiggyBank,
     color: "text-emerald-500",
-    category: "Savings"
+    category: "Investing"
   },
   {
     name: "EPF Calculator",
@@ -100,7 +100,7 @@ const calculatorList = [
     path: "/dashboard/epf-calculator",
     icon: Calculator,
     color: "text-cyan-500",
-    category: "Retirement"
+    category: "Investing"
   },
   {
     name: "ROI Calculator",

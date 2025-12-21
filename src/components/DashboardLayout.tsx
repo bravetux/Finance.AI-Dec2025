@@ -37,6 +37,7 @@ import {
   Sparkles,
   Car,
   MoreHorizontal,
+  Percent,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -126,24 +127,31 @@ const navItems = [
     icon: Calculator,
     type: 'section',
     children: [
-      { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Calculator, type: 'link' },
-      { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Calculator, type: 'link' },
-      { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
-      { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
-      { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
-      { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
-      { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
       { 
-        name: "More", 
-        icon: MoreHorizontal,
+        name: "Invest Calculators", 
+        icon: TrendingUp,
+        type: 'section',
+        children: [
+          { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Calculator, type: 'link' },
+          { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Calculator, type: 'link' },
+          { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
+          { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
+          { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
+        ]
+      },
+      { 
+        name: "Interest Calculators", 
+        icon: Percent,
         type: 'section',
         children: [
           { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Calculator, type: 'link' },
           { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
-          { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Calculator, type: 'link' },
         ]
       },
+      { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
+      { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
+      { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
     ]
   },
 ];

@@ -31,6 +31,8 @@ import ReportTable, { ReportRow } from "@/components/ReportTable";
 
 const COLORS = ["#94a3b8", "#4f46e5"]; // Saved vs SIP
 
+type DisplayUnit = 'actual' | 'lakh' | 'crore';
+
 const formatCurrency = (value: number) => {
   return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 };
@@ -41,6 +43,27 @@ const GoalCalculator: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState(10);
   const [inflationRate, setInflationRate] = useState(6);
   const [returnRate, setReturnRate] = useState(12);
+  const [unit, setUnit] = useState<DisplayUnit>('lakh');
+
+  // Multipliers
+  const LAKH = 100000;
+  const CRORE = 10000000;
+
+  const getUnitMultiplier = (u: DisplayUnit) => {
+    if (u === 'lakh') return LAKH;
+    if (u === 'crore') return CRORE;
+    return 1;
+  };
+
+  const currentMultiplier = getUnitMultiplier(unit);
+
+  const handleGoalCostChange = (val: number) => {
+    setGoalCost(val * currentMultiplier);
+  };
+
+  const handleAmountSavedChange = (val: number) => {
+    setAmountSaved(val * currentMultiplier);
+  };
 
   const { results, yearlyData, monthlyData, chartData, pieData } = useMemo(() => {
     const t = timePeriod;
@@ -154,27 +177,60 @@ const GoalCalculator: React.FC = () => {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Input Column */}
         <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Goal Details</CardTitle>
-            <CardDescription>Adjust sliders to match your specific goal.</CardDescription>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center mb-2">
+              <CardTitle>Goal Details</CardTitle>
+              <div className="flex bg-muted p-1 rounded-md">
+                {(['actual', 'lakh', 'crore'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => setUnit(u)}
+                    className={`px-2 py-1 text-[10px] uppercase font-bold rounded transition-colors ${unit === u ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background/50'}`}
+                  >
+                    {u === 'actual' ? '₹' : u}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <CardDescription>Adjust inputs to match your specific goal.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="flex justify-between">
-                <Label>Current Goal Cost</Label>
+                <Label>Current Goal Cost ({unit === 'actual' ? '₹' : unit})</Label>
                 <span className="font-bold text-primary">{formatCurrency(goalCost)}</span>
               </div>
-              <Slider value={[goalCost]} onValueChange={(v) => setGoalCost(v[0])} min={10000} max={10000000} step={10000} />
-              <Input type="number" value={goalCost} onChange={(e) => setGoalCost(Number(e.target.value))} />
+              <Slider 
+                value={[goalCost / currentMultiplier]} 
+                onValueChange={(v) => handleGoalCostChange(v[0])} 
+                min={unit === 'crore' ? 0.01 : 1} 
+                max={unit === 'crore' ? 50 : unit === 'lakh' ? 500 : 10000000} 
+                step={unit === 'crore' ? 0.1 : unit === 'lakh' ? 1 : 10000} 
+              />
+              <Input 
+                type="number" 
+                value={Number((goalCost / currentMultiplier).toFixed(2))} 
+                onChange={(e) => handleGoalCostChange(Number(e.target.value))} 
+              />
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between">
-                <Label>Amount Already Saved</Label>
+                <Label>Already Saved ({unit === 'actual' ? '₹' : unit})</Label>
                 <span className="font-bold text-primary">{formatCurrency(amountSaved)}</span>
               </div>
-              <Slider value={[amountSaved]} onValueChange={(v) => setAmountSaved(v[0])} min={0} max={5000000} step={10000} />
-              <Input type="number" value={amountSaved} onChange={(e) => setAmountSaved(Number(e.target.value))} />
+              <Slider 
+                value={[amountSaved / currentMultiplier]} 
+                onValueChange={(v) => handleAmountSavedChange(v[0])} 
+                min={0} 
+                max={unit === 'crore' ? 20 : unit === 'lakh' ? 200 : 5000000} 
+                step={unit === 'crore' ? 0.05 : unit === 'lakh' ? 0.5 : 5000} 
+              />
+              <Input 
+                type="number" 
+                value={Number((amountSaved / currentMultiplier).toFixed(2))} 
+                onChange={(e) => handleAmountSavedChange(Number(e.target.value))} 
+              />
             </div>
 
             <div className="space-y-4">

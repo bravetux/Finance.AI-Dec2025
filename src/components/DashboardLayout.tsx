@@ -40,6 +40,7 @@ import {
   ArrowUpRight,
   Percent,
   CreditCard,
+  Handshake,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -150,11 +151,12 @@ const navItems = [
         icon: Percent,
         type: 'section',
         children: [
+          { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
           { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
           { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Sparkles, type: 'link' },
+          { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Handshake, type: 'link' },
         ]
       },
-      { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
       { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
       { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
       { 
@@ -163,7 +165,6 @@ const navItems = [
         type: 'section',
         children: [
           { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
-          { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Calculator, type: 'link' },
         ]
       },
     ]

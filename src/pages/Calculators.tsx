@@ -44,7 +44,7 @@ const calculatorList = [
     path: "/dashboard/emi-calculator",
     icon: CreditCard,
     color: "text-blue-600",
-    category: "Loans"
+    category: "Interest"
   },
   {
     name: "SIP Calculator",
@@ -124,7 +124,7 @@ const calculatorList = [
     path: "/dashboard/p2p-lending-calculator",
     icon: Handshake,
     color: "text-amber-500",
-    category: "Alternate"
+    category: "Interest"
   },
   {
     name: "Expense Planner",

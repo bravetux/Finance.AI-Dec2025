@@ -268,6 +268,7 @@ const FutureValueCalculator: React.FC = () => {
     const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
     
     const isIncomeTable = label !== "Current Value";
+    const isMonthlyIncomeTable = label === "Monthly Value";
 
     return (
       <Card>
@@ -287,8 +288,11 @@ const FutureValueCalculator: React.FC = () => {
                       <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Principal + 6% Interest (₹)</th>
                     </>
                   )}
+                  {isMonthlyIncomeTable && (
+                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Monthly Value (₹)</th>
+                  )}
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI / Growth (%)</th>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{isIncomeTable ? "Accumulated FV" : "Future Value"} (₹)</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -299,6 +303,10 @@ const FutureValueCalculator: React.FC = () => {
                   
                   const principalPlusSix = asset.isIncomeSource
                     ? calculateAccumulatedFutureValue(asset.currentValue, 6, duration, asset.incomeType!)
+                    : 0;
+                  
+                  const futureCashFlowValue = (isMonthlyIncomeTable || (isIncomeTable && asset.incomeType === 'annual'))
+                    ? calculateFutureValue(asset.currentValue, asset.roi, duration)
                     : 0;
 
                   return (
@@ -312,6 +320,11 @@ const FutureValueCalculator: React.FC = () => {
                           <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-500">₹{totalPrincipal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
                           <td className="px-2 py-0 whitespace-nowrap text-sm text-blue-600 font-medium">₹{principalPlusSix.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
                         </>
+                      )}
+                      {isMonthlyIncomeTable && (
+                        <td className="px-2 py-0 whitespace-nowrap text-sm text-orange-600 font-bold">
+                          ₹{futureCashFlowValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </td>
                       )}
                       <td className="px-2 py-0 whitespace-nowrap">
                         <Input type="number" value={asset.roi} onChange={(e) => handleInputChange(asset.name, 'roi', e.target.value)} className="w-16 h-7 text-sm" />
@@ -333,6 +346,7 @@ const FutureValueCalculator: React.FC = () => {
                       <td className="px-2 py-2"></td>
                     </>
                   )}
+                  {isMonthlyIncomeTable && <td className="px-2 py-2"></td>}
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
                     ₹{tableFutureTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
@@ -343,7 +357,7 @@ const FutureValueCalculator: React.FC = () => {
           </div>
           {isIncomeTable && (
             <p className="text-[10px] text-muted-foreground mt-2 italic">
-              * Income sources are calculated as annual accumulations growing at the specified ROI. "Principal + 6% Interest" is a fixed benchmark for comparison.
+              * Income sources show both their future monthly/annual cash flow and the total accumulated savings (Accumulated FV) over {duration} years.
             </p>
           )}
         </CardContent>

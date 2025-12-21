@@ -50,6 +50,11 @@ interface VacateInputs {
   qtyPlumbTaps: number; costPlumbTaps: number;
   qtyPlumbDrainTaps: number; costPlumbDrainTaps: number;
   qtyPlumbPlugs: number; costPlumbPlugs: number;
+  qtyPlumbAngleValve: number; costPlumbAngleValve: number;
+  qtyPlumbWashbasinValve: number; costPlumbWashbasinValve: number;
+  qtyPlumbFaucet: number; costPlumbFaucet: number;
+  qtyPlumbFlushTank: number; costPlumbFlushTank: number;
+  qtyPlumbKitchenSink: number; costPlumbKitchenSink: number;
   // Other
   paintingExpenses: number;
   masonExpenses: number;
@@ -73,6 +78,11 @@ const initialInputs: VacateInputs = {
   qtyPlumbTaps: 0, costPlumbTaps: 0,
   qtyPlumbDrainTaps: 0, costPlumbDrainTaps: 0,
   qtyPlumbPlugs: 0, costPlumbPlugs: 0,
+  qtyPlumbAngleValve: 0, costPlumbAngleValve: 0,
+  qtyPlumbWashbasinValve: 0, costPlumbWashbasinValve: 0,
+  qtyPlumbFaucet: 0, costPlumbFaucet: 0,
+  qtyPlumbFlushTank: 0, costPlumbFlushTank: 0,
+  qtyPlumbKitchenSink: 0, costPlumbKitchenSink: 0,
   paintingExpenses: 0,
   masonExpenses: 0,
   cleaningAgreement: 0,
@@ -102,6 +112,7 @@ const RentVacateCalculator: React.FC = () => {
       ebUnits, ebRate, rentalBalance, commonEbCharges, repairWood,
       qtyElecTubelight, costElecTubelight, qtyElecBulbs, costElecBulbs, qtyElecFan, costElecFan, qtyElecSwitches, costElecSwitches, qtyElecPlug, costElecPlug,
       qtyPlumbHose, costPlumbHose, qtyPlumbTaps, costPlumbTaps, qtyPlumbDrainTaps, costPlumbDrainTaps, qtyPlumbPlugs, costPlumbPlugs,
+      qtyPlumbAngleValve, costPlumbAngleValve, qtyPlumbWashbasinValve, costPlumbWashbasinValve, qtyPlumbFaucet, costPlumbFaucet, qtyPlumbFlushTank, costPlumbFlushTank, qtyPlumbKitchenSink, costPlumbKitchenSink,
       paintingExpenses, masonExpenses, cleaningAgreement, cleaningMisc
     } = inputs;
 
@@ -116,7 +127,12 @@ const RentVacateCalculator: React.FC = () => {
     const plumbingTotal = (qtyPlumbHose * costPlumbHose) + 
                           (qtyPlumbTaps * costPlumbTaps) + 
                           (qtyPlumbDrainTaps * costPlumbDrainTaps) + 
-                          (qtyPlumbPlugs * costPlumbPlugs);
+                          (qtyPlumbPlugs * costPlumbPlugs) +
+                          (qtyPlumbAngleValve * costPlumbAngleValve) +
+                          (qtyPlumbWashbasinValve * costPlumbWashbasinValve) +
+                          (qtyPlumbFaucet * costPlumbFaucet) +
+                          (qtyPlumbFlushTank * costPlumbFlushTank) +
+                          (qtyPlumbKitchenSink * costPlumbKitchenSink);
 
     const cleaningTotal = cleaningAgreement + cleaningMisc;
 
@@ -378,12 +394,22 @@ const RentVacateCalculator: React.FC = () => {
                     {renderQtyPriceRow("Taps", "qtyPlumbTaps", "costPlumbTaps")}
                     {renderQtyPriceRow("Drain Taps", "qtyPlumbDrainTaps", "costPlumbDrainTaps")}
                     {renderQtyPriceRow("Plugs/Cover", "qtyPlumbPlugs", "costPlumbPlugs")}
+                    {renderQtyPriceRow("Angle Valve", "qtyPlumbAngleValve", "costPlumbAngleValve")}
+                    {renderQtyPriceRow("Washbasin Valve", "qtyPlumbWashbasinValve", "costPlumbWashbasinValve")}
+                    {renderQtyPriceRow("Faucet", "qtyPlumbFaucet", "costPlumbFaucet")}
+                    {renderQtyPriceRow("Flush Tank", "qtyPlumbFlushTank", "costPlumbFlushTank")}
+                    {renderQtyPriceRow("Kitchen Sink", "qtyPlumbKitchenSink", "costPlumbKitchenSink")}
                 </div>
                 <div className="hidden print:block space-y-0.5 text-xs">
                     {inputs.qtyPlumbHose > 0 && <div className="flex justify-between"><span>Hose Pipe (x{inputs.qtyPlumbHose})</span><span>{formatCurrency(inputs.qtyPlumbHose * inputs.costPlumbHose)}</span></div>}
                     {inputs.qtyPlumbTaps > 0 && <div className="flex justify-between"><span>Taps (x{inputs.qtyPlumbTaps})</span><span>{formatCurrency(inputs.qtyPlumbTaps * inputs.costPlumbTaps)}</span></div>}
                     {inputs.qtyPlumbDrainTaps > 0 && <div className="flex justify-between"><span>Drain Taps (x{inputs.qtyPlumbDrainTaps})</span><span>{formatCurrency(inputs.qtyPlumbDrainTaps * inputs.costPlumbDrainTaps)}</span></div>}
                     {inputs.qtyPlumbPlugs > 0 && <div className="flex justify-between"><span>Plugs/Cover (x{inputs.qtyPlumbPlugs})</span><span>{formatCurrency(inputs.qtyPlumbPlugs * inputs.costPlumbPlugs)}</span></div>}
+                    {inputs.qtyPlumbAngleValve > 0 && <div className="flex justify-between"><span>Angle Valve (x{inputs.qtyPlumbAngleValve})</span><span>{formatCurrency(inputs.qtyPlumbAngleValve * inputs.costPlumbAngleValve)}</span></div>}
+                    {inputs.qtyPlumbWashbasinValve > 0 && <div className="flex justify-between"><span>Washbasin Valve (x{inputs.qtyPlumbWashbasinValve})</span><span>{formatCurrency(inputs.qtyPlumbWashbasinValve * inputs.costPlumbWashbasinValve)}</span></div>}
+                    {inputs.qtyPlumbFaucet > 0 && <div className="flex justify-between"><span>Faucet (x{inputs.qtyPlumbFaucet})</span><span>{formatCurrency(inputs.qtyPlumbFaucet * inputs.costPlumbFaucet)}</span></div>}
+                    {inputs.qtyPlumbFlushTank > 0 && <div className="flex justify-between"><span>Flush Tank (x{inputs.qtyPlumbFlushTank})</span><span>{formatCurrency(inputs.qtyPlumbFlushTank * inputs.costPlumbFlushTank)}</span></div>}
+                    {inputs.qtyPlumbKitchenSink > 0 && <div className="flex justify-between"><span>Kitchen Sink (x{inputs.qtyPlumbKitchenSink})</span><span>{formatCurrency(inputs.qtyPlumbKitchenSink * inputs.costPlumbKitchenSink)}</span></div>}
                 </div>
             </div>
             <div className="border-t pt-2 mt-2 print:border-black print:mt-1">

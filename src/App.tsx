@@ -42,6 +42,7 @@ import SWPCalculator from "./pages/SWPCalculator";
 import PPFCalculator from "./pages/PPFCalculator";
 import EPFCalculator from "./pages/EPFCalculator";
 import GoalCalculator from "./pages/GoalCalculator";
+import ROICalculator from "./pages/ROICalculator";
 import CarAffordableCalculator from "./pages/CarAffordableCalculator";
 import P2PLendingCalculator from "./pages/P2PLendingCalculator";
 import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="ppf-calculator" element={<PPFCalculator />} />
               <Route path="epf-calculator" element={<EPFCalculator />} />
               <Route path="goal-calculator" element={<GoalCalculator />} />
+              <Route path="roi-calculator" element={<ROICalculator />} />
               <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />
               <Route path="p2p-lending-calculator" element={<P2PLendingCalculator />} />
               <Route path="advance-tax-calculator" element={<AdvanceTaxCalculator />} />

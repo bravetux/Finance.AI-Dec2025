@@ -126,6 +126,7 @@ const navItems = [
     type: 'section',
     children: [
       { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Calculator, type: 'link' },
+      { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
       { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Calculator, type: 'link' },
       { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
       { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },

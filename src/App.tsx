@@ -46,6 +46,7 @@ import ROICalculator from "./pages/ROICalculator";
 import CarAffordableCalculator from "./pages/CarAffordableCalculator";
 import P2PLendingCalculator from "./pages/P2PLendingCalculator";
 import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
+import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
 import Features from "./pages/Features";
 
 const queryClient = new QueryClient();
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />
               <Route path="p2p-lending-calculator" element={<P2PLendingCalculator />} />
               <Route path="advance-tax-calculator" element={<AdvanceTaxCalculator />} />
+              <Route path="compound-interest-calculator" element={<CompoundInterestCalculator />} />
               <Route path="expense-reduction-planner" element={<ExpenseReductionPlanner />} />
             </Route>
             <Route path="*" element={<NotFound />} />

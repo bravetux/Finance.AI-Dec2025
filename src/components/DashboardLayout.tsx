@@ -138,6 +138,7 @@ const navItems = [
         icon: MoreHorizontal,
         type: 'section',
         children: [
+          { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Calculator, type: 'link' },
           { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
           { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Calculator, type: 'link' },

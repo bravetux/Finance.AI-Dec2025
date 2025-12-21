@@ -184,10 +184,12 @@ const FutureValueCalculator: React.FC = () => {
   };
 
   const illiquidAssetNames = ["Home Value", "Other Real Estate", "Jewellery"];
-  const liquidAssets = useMemo(() => assets.filter(asset => !illiquidAssetNames.includes(asset.name)), [assets]);
-  const illiquidAssets = useMemo(() => assets.filter(asset => illiquidAssetNames.includes(asset.name)), [assets]);
   
-  const totalLiquidFutureValue = useMemo(() => liquidAssets.reduce((sum, asset) => sum + asset.futureValue, 0), [liquidAssets]);
+  const illiquidAssets = useMemo(() => assets.filter(asset => illiquidAssetNames.includes(asset.name)), [assets]);
+  const incomeAssets = useMemo(() => assets.filter(asset => asset.isIncomeSource), [assets]);
+  const liquidAssets = useMemo(() => assets.filter(asset => !illiquidAssetNames.includes(asset.name) && !asset.isIncomeSource), [assets]);
+  
+  const totalLiquidFutureValue = useMemo(() => [...liquidAssets, ...incomeAssets].reduce((sum, asset) => sum + asset.futureValue, 0), [liquidAssets, incomeAssets]);
   const totalCurrentValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.currentValue, 0), [assets]);
   const totalFutureValue = useMemo(() => assets.reduce((sum, asset) => sum + asset.futureValue, 0), [assets]);
   
@@ -256,7 +258,7 @@ const FutureValueCalculator: React.FC = () => {
     setTimeout(() => window.location.reload(), 1000);
   };
 
-  const AssetTable = ({ title, data }: { title: string, data: Asset[] }) => {
+  const AssetTable = ({ title, data, showMonthlyLabel }: { title: string, data: Asset[], showMonthlyLabel?: boolean }) => {
     const tableCurrentTotal = data.reduce((sum, asset) => sum + asset.currentValue, 0);
     const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
 
@@ -268,8 +270,10 @@ const FutureValueCalculator: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset / Income Source</th>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Current Value (₹)</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {showMonthlyLabel ? "Monthly Value (₹)" : "Current Value (₹)"}
+                  </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI / Growth (%)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
                 </tr>
@@ -279,7 +283,6 @@ const FutureValueCalculator: React.FC = () => {
                   <tr key={asset.name} className="h-10">
                     <td className="px-2 py-0 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                       {asset.name}
-                      {asset.isIncomeSource && <span className="ml-1 text-[10px] text-muted-foreground">(Monthly)</span>}
                     </td>
                     <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{asset.currentValue.toLocaleString('en-IN')}</td>
                     <td className="px-2 py-0 whitespace-nowrap">
@@ -293,7 +296,7 @@ const FutureValueCalculator: React.FC = () => {
                 <tr className="font-bold">
                   <td className="px-2 py-2 text-left text-sm">Total</td>
                   <td className="px-2 py-2 text-left text-sm">
-                    -
+                    {showMonthlyLabel ? `₹${tableCurrentTotal.toLocaleString('en-IN')}` : "-"}
                   </td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
@@ -303,9 +306,11 @@ const FutureValueCalculator: React.FC = () => {
               </tfoot>
             </table>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 italic">
-            * Income sources are calculated as annual accumulations growing at the specified ROI.
-          </p>
+          {showMonthlyLabel && (
+            <p className="text-[10px] text-muted-foreground mt-2 italic">
+              * Income sources are calculated as annual accumulations growing at the specified ROI.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -364,7 +369,8 @@ const FutureValueCalculator: React.FC = () => {
 
       <div className="grid gap-6">
         <AssetTable title="Illiquid Assets" data={illiquidAssets} />
-        <AssetTable title="Liquid Assets & Income Sources" data={liquidAssets} />
+        <AssetTable title="Liquid Assets" data={liquidAssets} />
+        <AssetTable title="Monthly Income Sources (Accumulated)" data={incomeAssets} showMonthlyLabel />
 
         <Card>
           <CardHeader><CardTitle>Summary</CardTitle></CardHeader>

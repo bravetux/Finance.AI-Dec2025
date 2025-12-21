@@ -36,6 +36,7 @@ import {
   HeartHandshake,
   Sparkles,
   Car,
+  MoreHorizontal,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -126,7 +127,6 @@ const navItems = [
     type: 'section',
     children: [
       { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Calculator, type: 'link' },
-      { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
       { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Calculator, type: 'link' },
       { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
       { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
@@ -135,6 +135,14 @@ const navItems = [
       { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Calculator, type: 'link' },
       { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
       { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
+      { 
+        name: "More", 
+        icon: MoreHorizontal,
+        type: 'section',
+        children: [
+          { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
+        ]
+      },
     ]
   },
 ];

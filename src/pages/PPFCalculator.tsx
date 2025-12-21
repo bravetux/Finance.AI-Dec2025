@@ -19,8 +19,9 @@ import {
   CartesianGrid, 
   Tooltip 
 } from "recharts";
-import { Calculator, TrendingUp, PieChart as PieChartIcon } from "lucide-react";
+import { Calculator, TrendingUp, PieChart as PieChartIcon, Table as TableIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const COLORS = ["#94a3b8", "#10b981"]; // Principal vs Interest
 
@@ -45,28 +46,53 @@ const PPFCalculator: React.FC = () => {
   const [comboN, setComboN] = useState(15);
   const [comboR, setComboR] = useState(7.1);
 
-  const calculateGrowth = (initial: number, recurring: number, rate: number, years: number) => {
+  const calculateGrowth = (initial: number, recurringYearly: number, rate: number, years: number) => {
     const r = rate / 100;
-    const data = [];
+    const monthlyRate = r / 12;
+    const yearlyData = [];
+    const monthlyData = [];
     let currentBalance = initial;
     let totalInvested = initial;
 
-    data.push({
+    yearlyData.push({
       year: 0,
       invested: Math.round(totalInvested),
       balance: Math.round(currentBalance),
+      interest: 0,
+      contribution: 0
     });
 
     for (let i = 1; i <= years; i++) {
-      // Standard PPF compounding is annual. 
-      // Recurring is assumed to be deposited at the start of the year for max benefit.
-      currentBalance = (currentBalance + recurring) * (1 + r);
-      totalInvested += recurring;
+      let annualInterest = 0;
+      let annualContribution = recurringYearly;
+      
+      // Assumption: Yearly contribution is made at the start of the year (April) for max interest
+      let openingBalanceForYear = currentBalance;
+      currentBalance += recurringYearly;
+      totalInvested += recurringYearly;
 
-      data.push({
+      for (let m = 1; m <= 12; m++) {
+        // In PPF, interest is calculated monthly but credited annually
+        const monthlyInterest = currentBalance * monthlyRate;
+        annualInterest += monthlyInterest;
+        
+        monthlyData.push({
+          period: `Y${i} M${m}`,
+          label: `Year ${i}, Month ${m}`,
+          contribution: m === 1 ? recurringYearly : 0,
+          interest: monthlyInterest,
+          balance: currentBalance + (m === 12 ? annualInterest : 0) // Show balance after interest credit in month 12
+        });
+      }
+
+      currentBalance += annualInterest;
+
+      yearlyData.push({
         year: i,
         invested: Math.round(totalInvested),
+        interest: Math.round(annualInterest),
         balance: Math.round(currentBalance),
+        contribution: Math.round(annualContribution)
       });
     }
 
@@ -77,7 +103,8 @@ const PPFCalculator: React.FC = () => {
       investedAmount: totalInvested,
       totalInterest,
       maturityValue,
-      chartData: data,
+      chartData: yearlyData,
+      monthlyData,
       pieData: [
         { name: "Total Investment", value: totalInvested },
         { name: "Total Interest", value: totalInterest },
@@ -89,78 +116,149 @@ const PPFCalculator: React.FC = () => {
   const lumpRes = useMemo(() => calculateGrowth(lumpP, 0, lumpR, lumpN), [lumpP, lumpR, lumpN]);
   const comboRes = useMemo(() => calculateGrowth(comboLump, comboYearly, comboR, comboN), [comboLump, comboYearly, comboR, comboN]);
 
-  const CalculatorLayout = ({ title, results, inputs }: any) => (
-    <div className="grid lg:grid-cols-2 gap-8 mt-6">
-      {/* Input Section */}
-      <div className="space-y-8">
-        {inputs}
-        
-        <div className="grid grid-cols-2 gap-4 pt-6 border-t">
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Total Investment</p>
-            <p className="text-lg font-semibold">{formatCurrency(results.investedAmount)}</p>
+  const CalculatorLayout = ({ results, inputs }: any) => (
+    <div className="space-y-8">
+      <div className="grid lg:grid-cols-2 gap-8 mt-6">
+        {/* Input Section */}
+        <div className="space-y-8">
+          {inputs}
+          
+          <div className="grid grid-cols-2 gap-4 pt-6 border-t">
+            <div className="space-y-1">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Total Investment</p>
+              <p className="text-lg font-semibold">{formatCurrency(results.investedAmount)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Total Interest</p>
+              <p className="text-lg font-semibold text-green-600">+{formatCurrency(results.totalInterest)}</p>
+            </div>
+            <div className="col-span-2 pt-2">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Maturity Value</p>
+              <p className="text-3xl font-black text-primary">{formatCurrency(results.maturityValue)}</p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Total Interest</p>
-            <p className="text-lg font-semibold text-green-600">+{formatCurrency(results.totalInterest)}</p>
-          </div>
-          <div className="col-span-2 pt-2">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Maturity Value</p>
-            <p className="text-3xl font-black text-primary">{formatCurrency(results.maturityValue)}</p>
-          </div>
+        </div>
+
+        {/* Visual Section */}
+        <div className="space-y-6">
+          <Tabs defaultValue="growth" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="growth"><TrendingUp className="mr-2 h-4 w-4" /> Growth</TabsTrigger>
+              <TabsTrigger value="split"><PieChartIcon className="mr-2 h-4 w-4" /> Breakdown</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="growth" className="h-[350px] pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={results.chartData}>
+                  <defs>
+                    <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="year" label={{ value: 'Years', position: 'insideBottom', offset: -5 }} />
+                  <YAxis tickFormatter={(val) => `₹${(val / 100000).toFixed(1)}L`} />
+                  <Tooltip formatter={(val: number) => formatCurrency(val)} labelFormatter={(label) => `Year ${label}`} />
+                  <Area type="monotone" dataKey="balance" stroke="#10b981" fillOpacity={1} fill="url(#colorBalance)" name="Total Balance" />
+                  <Area type="monotone" dataKey="invested" stroke="#94a3b8" fill="transparent" strokeDasharray="5 5" name="Invested" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </TabsContent>
+
+            <TabsContent value="split" className="h-[350px] pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={results.pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {results.pieData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
-      {/* Visual Section */}
-      <div className="space-y-6">
-        <Tabs defaultValue="growth" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="growth"><TrendingUp className="mr-2 h-4 w-4" /> Growth</TabsTrigger>
-            <TabsTrigger value="split"><PieChartIcon className="mr-2 h-4 w-4" /> Breakdown</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="growth" className="h-[350px] pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={results.chartData}>
-                <defs>
-                  <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="year" label={{ value: 'Years', position: 'insideBottom', offset: -5 }} />
-                <YAxis tickFormatter={(val) => `₹${(val / 100000).toFixed(1)}L`} />
-                <Tooltip formatter={(val: number) => formatCurrency(val)} labelFormatter={(label) => `Year ${label}`} />
-                <Area type="monotone" dataKey="balance" stroke="#10b981" fillOpacity={1} fill="url(#colorBalance)" name="Total Balance" />
-                <Area type="monotone" dataKey="invested" stroke="#94a3b8" fill="transparent" strokeDasharray="5 5" name="Invested" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </TabsContent>
+      {/* Table Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Detailed Schedule</CardTitle>
+            <CardDescription>View your wealth accumulation progress.</CardDescription>
+          </div>
+          <TableIcon className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="yearly">
+            <TabsList className="mb-4">
+              <TabsTrigger value="yearly">Yearly View</TabsTrigger>
+              <TabsTrigger value="monthly">Monthly View</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="yearly">
+              <div className="max-h-[400px] overflow-y-auto border rounded-md">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background shadow-sm">
+                    <TableRow>
+                      <TableHead>Year</TableHead>
+                      <TableHead className="text-right">Annual Deposit</TableHead>
+                      <TableHead className="text-right">Interest Credited</TableHead>
+                      <TableHead className="text-right">Closing Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.chartData.filter((d: any) => d.year > 0).map((row: any) => (
+                      <TableRow key={row.year}>
+                        <TableCell className="font-medium">Year {row.year}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(row.contribution)}</TableCell>
+                        <TableCell className="text-right text-green-600">+{formatCurrency(row.interest)}</TableCell>
+                        <TableCell className="text-right font-bold">{formatCurrency(row.balance)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="split" className="h-[350px] pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={results.pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {results.pieData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(val: number) => formatCurrency(val)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="monthly">
+              <div className="max-h-[400px] overflow-y-auto border rounded-md">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background shadow-sm">
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead className="text-right">Deposit</TableHead>
+                      <TableHead className="text-right">Accrued Interest</TableHead>
+                      <TableHead className="text-right">Running Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.monthlyData.map((row: any) => (
+                      <TableRow key={row.period}>
+                        <TableCell className="font-medium">{row.label}</TableCell>
+                        <TableCell className="text-right">{row.contribution > 0 ? formatCurrency(row.contribution) : "-"}</TableCell>
+                        <TableCell className="text-right text-green-600">+{formatCurrency(row.interest)}</TableCell>
+                        <TableCell className="text-right font-bold">{formatCurrency(row.balance)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 

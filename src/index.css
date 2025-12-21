@@ -77,9 +77,15 @@
 
 /* PRINT STYLES */
 @media print {
+  @page {
+    margin: 5mm;
+    size: auto;
+  }
+
   /* 1. Hide unwanted elements */
   aside,           /* The Sidebar */
   button,          /* Buttons */
+  header,
   .print\:hidden { /* Helper class */
     display: none !important;
   }
@@ -94,11 +100,10 @@
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
+    color: black !important;
   }
 
-  /* 3. Target the Main Layout Wrapper (div.flex.h-screen) 
-     We need to break the flexbox and fixed height.
-  */
+  /* 3. Target the Main Layout Wrapper */
   #root > div {
     display: block !important;
     height: auto !important;
@@ -106,41 +111,43 @@
     width: 100% !important;
   }
 
-  /* 4. Target the Main Content Area (main.flex-1.overflow-y-auto)
-     This is the critical one. It must expand to fit content.
-  */
+  /* 4. Target the Main Content Area */
   main {
     display: block !important;
     height: auto !important;
-    overflow: visible !important; /* Allow content to spill out */
+    overflow: visible !important;
     flex: none !important;
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  /* 5. Handle Content Specifics */
-  
-  /* Ensure charts have size */
-  .recharts-responsive-container {
-    height: 350px !important;
-    width: 100% !important;
+  /* Force single page compression */
+  .grid {
+    display: grid !important;
+    gap: 0.5rem !important;
   }
 
-  /* Ensure tables print fully */
+  /* Specific fix for Vacate Calculator components to fit on one page */
+  .space-y-6 {
+    gap: 0.5rem !important;
+  }
+
+  .recharts-responsive-container {
+    height: 300px !important;
+  }
+
   table {
     width: 100% !important;
-    display: table !important;
+    border-collapse: collapse !important;
   }
   
-  /* Prevent table rows from breaking awkwardly */
   tr {
     page-break-inside: avoid;
   }
 
-  /* Ensure the SWP Report Table container (which has max-h) expands */
-  div[class*="max-h-"] {
-    max-height: none !important;
-    overflow: visible !important;
+  /* Ensure card backgrounds and borders are visible if useful, or standard flat look */
+  .border {
+    border-color: #000 !important;
   }
 }

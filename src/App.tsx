@@ -47,6 +47,7 @@ import CarAffordableCalculator from "./pages/CarAffordableCalculator";
 import P2PLendingCalculator from "./pages/P2PLendingCalculator";
 import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
 import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
+import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,8 @@ const App = () => (
               <Route path="post-retirement-strategy" element={<PostRetirementStrategy />} />
               <Route path="reports" element={<Reports />} />
               <Route path="ai-prompt" element={<AIPrompt />} />
+              <Route path="calculators" element={<Calculators />} />
+              <Route path="goal-calculator" element={<GoalCalculator />} />
               <Route path="sip-calculator" element={<SIPCalculator />} />
               <Route path="swp-calculator" element={<SWPCalculator />} />
               <Route path="ppf-calculator" element={<PPFCalculator />} />

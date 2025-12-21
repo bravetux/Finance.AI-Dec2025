@@ -37,6 +37,7 @@ import {
   Sparkles,
   Car,
   MoreHorizontal,
+  ArrowUpRight,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -125,7 +126,9 @@ const navItems = [
     name: "Calculators", 
     icon: Calculator,
     type: 'section',
+    path: "/dashboard/calculators",
     children: [
+      { name: "Overview", path: "/dashboard/calculators", icon: LayoutDashboard, type: 'link' },
       { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Calculator, type: 'link' },
       { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Calculator, type: 'link' },
       { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
@@ -175,15 +178,27 @@ const DashboardLayout: React.FC = () => {
             item.type === 'section' && item.children ? (
               <Accordion key={item.name} type="single" collapsible className="w-full">
                 <AccordionItem value={item.name} className="border-none">
-                  <AccordionTrigger
-                    onClick={handleAccordionClick}
-                    className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium"
-                  >
-                    <div className="flex items-center">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.name}
-                    </div>
-                  </AccordionTrigger>
+                  <div className="flex items-center gap-1 group">
+                    <AccordionTrigger
+                      onClick={handleAccordionClick}
+                      className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium"
+                    >
+                      <div className="flex items-center">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.name}
+                      </div>
+                    </AccordionTrigger>
+                    {item.path && (
+                      <Link 
+                        to={item.path} 
+                        className="p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sidebar-accent rounded-md"
+                        title={`Go to ${item.name} Overview`}
+                        onClick={() => isMobile && setIsSheetOpen(false)}
+                      >
+                        <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    )}
+                  </div>
                   <AccordionContent className="pt-1 pb-0">
                     <div className="flex flex-col gap-1 pl-4">
                       {item.children.map((child) =>

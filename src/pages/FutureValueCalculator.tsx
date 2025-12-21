@@ -25,11 +25,22 @@ interface Asset {
   currentValue: number;
   roi: number;
   futureValue: number;
+  isIncomeSource?: boolean;
 }
 
-// Helper function to calculate future value
+// Helper function to calculate future value for compounding assets
 const calculateFutureValue = (pv: number, r: number, t: number) => {
   return pv * Math.pow(1 + r / 100, t);
+};
+
+// Helper function to calculate accumulated future value for income sources (Annuity)
+const calculateAccumulatedFutureValue = (monthlyValue: number, r: number, t: number) => {
+  if (t <= 0) return 0;
+  const annualValue = monthlyValue * 12;
+  const rate = r / 100;
+  if (rate === 0) return annualValue * t;
+  // FV of an Ordinary Annuity: P * [((1 + r)^t - 1) / r]
+  return annualValue * (Math.pow(1 + rate, t) - 1) / rate;
 };
 
 const FutureValueCalculator: React.FC = () => {
@@ -62,7 +73,6 @@ const FutureValueCalculator: React.FC = () => {
 
   useEffect(() => {
     const initializeAssets = () => {
-      // Fetch Net Worth data
       const netWorthData = (() => {
         try {
           const savedData = localStorage.getItem('netWorthData');
@@ -70,7 +80,6 @@ const FutureValueCalculator: React.FC = () => {
         } catch { return {}; }
       })();
 
-      // Fetch Finance data (Income sources)
       const financeData = (() => {
         try {
           const savedData = localStorage.getItem('finance-data');
@@ -78,7 +87,6 @@ const FutureValueCalculator: React.FC = () => {
         } catch { return {}; }
       })();
 
-      // Fetch the saved ROI settings
       const futureValueData = (() => {
         try {
           const savedData = localStorage.getItem('future-value-data');
@@ -107,14 +115,14 @@ const FutureValueCalculator: React.FC = () => {
         { name: "Cryptocurrency", key: "cryptocurrency", source: 'netWorth', roi: 15 },
         { name: "REITs", key: "reits", source: 'netWorth', roi: 9 },
 
-        // Liquid Assets (New from Cashflow/Finance Data)
-        { name: "Business Income", key: "businessIncome", source: 'finance', roi: 8 },
-        { name: "Rental Income Prop 1", key: "rentalProperty1", source: 'finance', roi: 5 },
-        { name: "Rental Income Prop 2", key: "rentalProperty2", source: 'finance', roi: 5 },
-        { name: "Rental Income Prop 3", key: "rentalProperty3", source: 'finance', roi: 5 },
-        { name: "FD Interest Income", key: "fdInterest", source: 'finance', roi: 6 },
-        { name: "Bond Income", key: "bondIncome", source: 'finance', roi: 7 },
-        { name: "Dividend Income", key: "dividendIncome", source: 'finance', roi: 10 },
+        // Liquid Assets (New from Cashflow/Finance Data - treated as Income Sources)
+        { name: "Business Income", key: "businessIncome", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "Rental Income Prop 1", key: "rentalProperty1", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "Rental Income Prop 2", key: "rentalProperty2", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "Rental Income Prop 3", key: "rentalProperty3", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "FD Interest Income", key: "fdInterest", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "Bond Income", key: "bondIncome", source: 'finance', roi: 7, isIncomeSource: true },
+        { name: "Dividend Income", key: "dividendIncome", source: 'finance', roi: 7, isIncomeSource: true },
       ];
 
       const newAssets = defaultAssets.map(defaultAsset => {
@@ -128,13 +136,16 @@ const FutureValueCalculator: React.FC = () => {
         }
 
         const roi = savedAsset ? savedAsset.roi : defaultAsset.roi;
-        const futureValue = calculateFutureValue(currentValue, roi, duration);
+        const futureValue = defaultAsset.isIncomeSource 
+          ? calculateAccumulatedFutureValue(currentValue, roi, duration)
+          : calculateFutureValue(currentValue, roi, duration);
 
         return {
           name: defaultAsset.name,
           currentValue,
           roi,
           futureValue,
+          isIncomeSource: defaultAsset.isIncomeSource,
         };
       });
       setAssets(newAssets);
@@ -163,11 +174,9 @@ const FutureValueCalculator: React.FC = () => {
         [field]: Number(value) || 0
       };
 
-      updatedAsset.futureValue = calculateFutureValue(
-        updatedAsset.currentValue,
-        updatedAsset.roi,
-        duration
-      );
+      updatedAsset.futureValue = updatedAsset.isIncomeSource
+        ? calculateAccumulatedFutureValue(updatedAsset.currentValue, updatedAsset.roi, duration)
+        : calculateFutureValue(updatedAsset.currentValue, updatedAsset.roi, duration);
       
       newAssets[assetIndex] = updatedAsset;
       return newAssets;
@@ -247,11 +256,6 @@ const FutureValueCalculator: React.FC = () => {
     setTimeout(() => window.location.reload(), 1000);
   };
 
-  const growth = useMemo(() => {
-    if (totalCurrentValue === 0) return 0;
-    return ((totalFutureValue / totalCurrentValue) - 1) * 100;
-  }, [totalFutureValue, totalCurrentValue]);
-
   const AssetTable = ({ title, data }: { title: string, data: Asset[] }) => {
     const tableCurrentTotal = data.reduce((sum, asset) => sum + asset.currentValue, 0);
     const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
@@ -266,19 +270,22 @@ const FutureValueCalculator: React.FC = () => {
                 <tr>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset / Income Source</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Current Value (₹)</th>
-                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI (%)</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI / Growth (%)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {data.map((asset) => (
                   <tr key={asset.name} className="h-10">
-                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{asset.name}</td>
+                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {asset.name}
+                      {asset.isIncomeSource && <span className="ml-1 text-[10px] text-muted-foreground">(Monthly)</span>}
+                    </td>
                     <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{asset.currentValue.toLocaleString('en-IN')}</td>
                     <td className="px-2 py-0 whitespace-nowrap">
                       <Input type="number" value={asset.roi} onChange={(e) => handleInputChange(asset.name, 'roi', e.target.value)} className="w-16 h-7 text-sm" />
                     </td>
-                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium">₹{asset.futureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</td>
+                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium">₹{asset.futureValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -286,16 +293,19 @@ const FutureValueCalculator: React.FC = () => {
                 <tr className="font-bold">
                   <td className="px-2 py-2 text-left text-sm">Total</td>
                   <td className="px-2 py-2 text-left text-sm">
-                    ₹{tableCurrentTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    -
                   </td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
-                    ₹{tableFutureTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    ₹{tableFutureTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                   </td>
                 </tr>
               </tfoot>
             </table>
           </div>
+          <p className="text-[10px] text-muted-foreground mt-2 italic">
+            * Income sources are calculated as annual accumulations growing at the specified ROI.
+          </p>
         </CardContent>
       </Card>
     );
@@ -361,12 +371,12 @@ const FutureValueCalculator: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="font-medium">Total Current Value:</span><span className="font-bold">₹{totalCurrentValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-                <div className="flex justify-between"><span className="font-medium">Average ROI:</span><span className="font-bold">{averageRoi.toFixed(2)}%</span></div>
+                <div className="flex justify-between"><span className="font-medium">Total Current Monthly Income:</span><span className="font-bold">₹{assets.filter(a => a.isIncomeSource).reduce((sum, a) => sum + a.currentValue, 0).toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span className="font-medium">Average ROI/Growth:</span><span className="font-bold">{averageRoi.toFixed(2)}%</span></div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="font-medium">Total Future Value:</span><span className="font-bold text-green-600">₹{totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-                <div className="flex justify-between"><span className="font-medium">Growth:</span><span className="font-bold text-green-600">{growth.toFixed(2)}%</span></div>
+                <div className="flex justify-between"><span className="font-medium">Total Future Value:</span><span className="font-bold text-green-600">₹{totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span></div>
+                <div className="flex justify-between"><span className="font-medium">Projected Age:</span><span className="font-bold text-blue-600">{currentAge + duration}</span></div>
               </div>
             </div>
           </CardContent>

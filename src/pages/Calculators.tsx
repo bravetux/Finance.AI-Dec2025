@@ -17,7 +17,8 @@ import {
   ArrowUpRight,
   Sparkles,
   BarChart3,
-  Percent
+  Percent,
+  CreditCard
 } from "lucide-react";
 
 const calculatorList = [
@@ -36,6 +37,14 @@ const calculatorList = [
     icon: BarChart3,
     color: "text-indigo-600",
     category: "Investing"
+  },
+  {
+    name: "EMI Calculator",
+    description: "Calculate your monthly installments, total interest, and view a detailed repayment schedule.",
+    path: "/dashboard/emi-calculator",
+    icon: CreditCard,
+    color: "text-blue-600",
+    category: "Loans"
   },
   {
     name: "SIP Calculator",

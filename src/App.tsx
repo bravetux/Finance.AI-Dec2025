@@ -49,6 +49,7 @@ import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
 import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
 import InterestCalculator from "./pages/InterestCalculator";
 import InvestmentCalculator from "./pages/InvestmentCalculator";
+import EMICalculator from "./pages/EMICalculator";
 import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
 
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="investment-calculator" element={<InvestmentCalculator />} />
               <Route path="interest-calculator" element={<InterestCalculator />} />
               <Route path="roi-calculator" element={<ROICalculator />} />
+              <Route path="emi-calculator" element={<EMICalculator />} />
               <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />
               <Route path="p2p-lending-calculator" element={<P2PLendingCalculator />} />
               <Route path="advance-tax-calculator" element={<AdvanceTaxCalculator />} />

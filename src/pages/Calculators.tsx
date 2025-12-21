@@ -16,7 +16,8 @@ import {
   Handshake, 
   ArrowUpRight,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Percent
 } from "lucide-react";
 
 const calculatorList = [
@@ -43,6 +44,14 @@ const calculatorList = [
     icon: Repeat,
     color: "text-green-500",
     category: "Investing"
+  },
+  {
+    name: "Interest Calculator",
+    description: "Calculate Simple or Compound interest with precision using durations or specific date ranges.",
+    path: "/dashboard/interest-calculator",
+    icon: Percent,
+    color: "text-violet-500",
+    category: "General"
   },
   {
     name: "SWP Calculator",

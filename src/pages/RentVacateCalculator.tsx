@@ -38,15 +38,18 @@ interface VacateInputs {
   ebRate: number;
   commonEbCharges: number;
   repairWood: number;
-  elecTubelight: number;
-  elecBulbs: number;
-  elecFan: number;
-  elecSwitches: number;
-  elecPlug: number;
-  plumbHose: number;
-  plumbTaps: number;
-  plumbDrainTaps: number;
-  plumbPlugs: number;
+  // Electrical - Qty & Unit Cost
+  qtyElecTubelight: number; costElecTubelight: number;
+  qtyElecBulbs: number; costElecBulbs: number;
+  qtyElecFan: number; costElecFan: number;
+  qtyElecSwitches: number; costElecSwitches: number;
+  qtyElecPlug: number; costElecPlug: number;
+  // Plumbing - Qty & Unit Cost
+  qtyPlumbHose: number; costPlumbHose: number;
+  qtyPlumbTaps: number; costPlumbTaps: number;
+  qtyPlumbDrainTaps: number; costPlumbDrainTaps: number;
+  qtyPlumbPlugs: number; costPlumbPlugs: number;
+  // Other
   paintingExpenses: number;
   masonExpenses: number;
   cleaningAgreement: number;
@@ -60,15 +63,15 @@ const initialInputs: VacateInputs = {
   ebRate: 8,
   commonEbCharges: 0,
   repairWood: 0,
-  elecTubelight: 0,
-  elecBulbs: 0,
-  elecFan: 0,
-  elecSwitches: 0,
-  elecPlug: 0,
-  plumbHose: 0,
-  plumbTaps: 0,
-  plumbDrainTaps: 0,
-  plumbPlugs: 0,
+  qtyElecTubelight: 0, costElecTubelight: 0,
+  qtyElecBulbs: 0, costElecBulbs: 0,
+  qtyElecFan: 0, costElecFan: 0,
+  qtyElecSwitches: 0, costElecSwitches: 0,
+  qtyElecPlug: 0, costElecPlug: 0,
+  qtyPlumbHose: 0, costPlumbHose: 0,
+  qtyPlumbTaps: 0, costPlumbTaps: 0,
+  qtyPlumbDrainTaps: 0, costPlumbDrainTaps: 0,
+  qtyPlumbPlugs: 0, costPlumbPlugs: 0,
   paintingExpenses: 0,
   masonExpenses: 0,
   cleaningAgreement: 0,
@@ -96,15 +99,24 @@ const RentVacateCalculator: React.FC = () => {
   const calculations = useMemo(() => {
     const { 
       ebUnits, ebRate, rentalBalance, commonEbCharges, repairWood,
-      elecTubelight, elecBulbs, elecFan, elecSwitches, elecPlug,
-      plumbHose, plumbTaps, plumbDrainTaps, plumbPlugs,
+      qtyElecTubelight, costElecTubelight, qtyElecBulbs, costElecBulbs, qtyElecFan, costElecFan, qtyElecSwitches, costElecSwitches, qtyElecPlug, costElecPlug,
+      qtyPlumbHose, costPlumbHose, qtyPlumbTaps, costPlumbTaps, qtyPlumbDrainTaps, costPlumbDrainTaps, qtyPlumbPlugs, costPlumbPlugs,
       paintingExpenses, masonExpenses, cleaningAgreement, cleaningMisc
     } = inputs;
 
     const ebCharge = ebUnits * ebRate;
     
-    const electricalTotal = elecTubelight + elecBulbs + elecFan + elecSwitches + elecPlug;
-    const plumbingTotal = plumbHose + plumbTaps + plumbDrainTaps + plumbPlugs;
+    const electricalTotal = (qtyElecTubelight * costElecTubelight) + 
+                            (qtyElecBulbs * costElecBulbs) + 
+                            (qtyElecFan * costElecFan) + 
+                            (qtyElecSwitches * costElecSwitches) + 
+                            (qtyElecPlug * costElecPlug);
+
+    const plumbingTotal = (qtyPlumbHose * costPlumbHose) + 
+                          (qtyPlumbTaps * costPlumbTaps) + 
+                          (qtyPlumbDrainTaps * costPlumbDrainTaps) + 
+                          (qtyPlumbPlugs * costPlumbPlugs);
+
     const cleaningTotal = cleaningAgreement + cleaningMisc;
 
     const totalDeductions = (
@@ -166,7 +178,7 @@ const RentVacateCalculator: React.FC = () => {
 
   const renderInputField = (label: string, field: keyof VacateInputs, placeholder = "0") => (
     <div className="space-y-1">
-      <Label htmlFor={field} className="text-xs">{label}</Label>
+      <Label htmlFor={field} className="text-[10px] uppercase font-bold text-muted-foreground">{label}</Label>
       <Input 
         id={field} 
         type="number" 
@@ -175,6 +187,32 @@ const RentVacateCalculator: React.FC = () => {
         onChange={e => handleInputChange(field, e.target.value)} 
         className="h-8 text-sm"
       />
+    </div>
+  );
+
+  const renderQtyPriceRow = (label: string, qtyField: keyof VacateInputs, costField: keyof VacateInputs) => (
+    <div className="grid grid-cols-5 gap-2 items-end">
+      <div className="col-span-2">
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">{label}</Label>
+      </div>
+      <div className="col-span-1">
+        <Input 
+          type="number" 
+          placeholder="Qty" 
+          value={inputs[qtyField] === 0 ? "" : inputs[qtyField]} 
+          onChange={e => handleInputChange(qtyField, e.target.value)}
+          className="h-7 text-xs px-2"
+        />
+      </div>
+      <div className="col-span-2">
+        <Input 
+          type="number" 
+          placeholder="Unit ₹" 
+          value={inputs[costField] === 0 ? "" : inputs[costField]} 
+          onChange={e => handleInputChange(costField, e.target.value)}
+          className="h-7 text-xs px-2"
+        />
+      </div>
     </div>
   );
 
@@ -217,7 +255,7 @@ const RentVacateCalculator: React.FC = () => {
                 <CardTitle className="text-sm font-medium flex items-center gap-2"><Wallet className="h-4 w-4" />Advance Amount</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-                <div className="text-2xl font-bold">{formatCurrency(inputs.advanceAmount)}</div>
+                <div className="text-2xl font-bold mb-2">{formatCurrency(inputs.advanceAmount)}</div>
                 {renderInputField("Enter Security Deposit", "advanceAmount")}
             </CardContent>
         </Card>
@@ -262,7 +300,7 @@ const RentVacateCalculator: React.FC = () => {
                 {renderInputField("EB Rate/Unit", "ebRate")}
             </div>
             <div className="flex justify-between items-center text-sm font-medium bg-muted p-2 rounded">
-                <span>Calculated EB Bill:</span>
+                <span className="text-xs">Calculated EB Bill:</span>
                 <span>{formatCurrency(calculations.ebCharge)}</span>
             </div>
             {renderInputField("Common Area EB Charges", "commonEbCharges")}
@@ -277,13 +315,16 @@ const RentVacateCalculator: React.FC = () => {
           <CardContent className="p-4 pt-0 space-y-3">
             {renderInputField("Wood Work Repairs", "repairWood")}
             <div className="space-y-2 border-t pt-2 mt-2">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">Electrical Items</p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    {renderInputField("Tubelight", "elecTubelight")}
-                    {renderInputField("Bulbs", "elecBulbs")}
-                    {renderInputField("Fan Repair", "elecFan")}
-                    {renderInputField("Switches", "elecSwitches")}
-                    {renderInputField("Plug Points", "elecPlug")}
+                <div className="flex justify-between items-center mb-1">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Electrical Items</p>
+                    <span className="text-[10px] font-bold text-blue-600">{formatCurrency(calculations.electricalTotal)}</span>
+                </div>
+                <div className="space-y-1.5">
+                    {renderQtyPriceRow("Tubelight", "qtyElecTubelight", "costElecTubelight")}
+                    {renderQtyPriceRow("Bulbs", "qtyElecBulbs", "costElecBulbs")}
+                    {renderQtyPriceRow("Fan Repair", "qtyElecFan", "costElecFan")}
+                    {renderQtyPriceRow("Switches", "qtyElecSwitches", "costElecSwitches")}
+                    {renderQtyPriceRow("Plug Point", "qtyElecPlug", "costElecPlug")}
                 </div>
             </div>
           </CardContent>
@@ -296,12 +337,15 @@ const RentVacateCalculator: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3">
             <div className="space-y-2">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">Plumbing Items</p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    {renderInputField("Hose Pipe", "plumbHose")}
-                    {renderInputField("Taps", "plumbTaps")}
-                    {renderInputField("Drain Taps", "plumbDrainTaps")}
-                    {renderInputField("Plugs/Covers", "plumbPlugs")}
+                <div className="flex justify-between items-center mb-1">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Plumbing Items</p>
+                    <span className="text-[10px] font-bold text-emerald-600">{formatCurrency(calculations.plumbingTotal)}</span>
+                </div>
+                <div className="space-y-1.5">
+                    {renderQtyPriceRow("Hose Pipe", "qtyPlumbHose", "costPlumbHose")}
+                    {renderQtyPriceRow("Taps", "qtyPlumbTaps", "costPlumbTaps")}
+                    {renderQtyPriceRow("Drain Taps", "qtyPlumbDrainTaps", "costPlumbDrainTaps")}
+                    {renderQtyPriceRow("Plugs/Cover", "qtyPlumbPlugs", "costPlumbPlugs")}
                 </div>
             </div>
             <div className="border-t pt-2 mt-2">
@@ -331,7 +375,7 @@ const RentVacateCalculator: React.FC = () => {
                 <CardTitle className="text-md">Deduction Summary</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-xs">
                     <div className="flex justify-between border-b pb-1">
                         <span className="text-muted-foreground">Rent Arrears:</span>
                         <span className="font-medium">{formatCurrency(inputs.rentalBalance)}</span>
@@ -368,12 +412,12 @@ const RentVacateCalculator: React.FC = () => {
             </CardContent>
             <CardFooter className="bg-muted/50 p-4 rounded-b-xl flex justify-between items-center">
                 <div className="flex items-center gap-2 font-bold text-lg">
-                    <span className="text-muted-foreground">Deposit</span>
+                    <span className="text-muted-foreground text-sm uppercase">Deposit</span>
                     <ArrowRight className="h-4 w-4" />
                     <span className="text-primary">{formatCurrency(inputs.advanceAmount)}</span>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs uppercase font-bold text-muted-foreground">Final Balance</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Refund Balance</p>
                     <p className={`text-2xl font-black ${calculations.balanceDue > 0 ? "text-orange-600" : "text-green-600"}`}>
                         {formatCurrency(calculations.balanceDue > 0 ? -calculations.balanceDue : calculations.finalRefund)}
                     </p>

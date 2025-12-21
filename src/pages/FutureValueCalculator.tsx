@@ -266,6 +266,8 @@ const FutureValueCalculator: React.FC = () => {
   const AssetTable = ({ title, data, label }: { title: string, data: Asset[], label: string }) => {
     const tableCurrentTotal = data.reduce((sum, asset) => sum + asset.currentValue, 0);
     const tableFutureTotal = data.reduce((sum, asset) => sum + asset.futureValue, 0);
+    
+    const isIncomeTable = label !== "Current Value";
 
     return (
       <Card>
@@ -279,30 +281,43 @@ const FutureValueCalculator: React.FC = () => {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     {label} (₹)
                   </th>
+                  {isIncomeTable && (
+                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Principal (₹)</th>
+                  )}
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ROI / Growth (%)</th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Future Value (₹)</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {data.map((asset) => (
-                  <tr key={asset.name} className="h-10">
-                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {asset.name}
-                    </td>
-                    <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{asset.currentValue.toLocaleString('en-IN')}</td>
-                    <td className="px-2 py-0 whitespace-nowrap">
-                      <Input type="number" value={asset.roi} onChange={(e) => handleInputChange(asset.name, 'roi', e.target.value)} className="w-16 h-7 text-sm" />
-                    </td>
-                    <td className="px-2 py-0 whitespace-nowrap text-sm font-medium">₹{asset.futureValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                  </tr>
-                ))}
+                {data.map((asset) => {
+                  const totalPrincipal = asset.isIncomeSource 
+                    ? (asset.incomeType === 'monthly' ? asset.currentValue * 12 * duration : asset.currentValue * duration)
+                    : 0;
+
+                  return (
+                    <tr key={asset.name} className="h-10">
+                      <td className="px-2 py-0 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {asset.name}
+                      </td>
+                      <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{asset.currentValue.toLocaleString('en-IN')}</td>
+                      {isIncomeTable && (
+                        <td className="px-2 py-0 whitespace-nowrap text-sm text-gray-500">₹{totalPrincipal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                      )}
+                      <td className="px-2 py-0 whitespace-nowrap">
+                        <Input type="number" value={asset.roi} onChange={(e) => handleInputChange(asset.name, 'roi', e.target.value)} className="w-16 h-7 text-sm" />
+                      </td>
+                      <td className="px-2 py-0 whitespace-nowrap text-sm font-medium">₹{asset.futureValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot className="bg-gray-50 dark:bg-gray-800">
                 <tr className="font-bold">
                   <td className="px-2 py-2 text-left text-sm">Total</td>
                   <td className="px-2 py-2 text-left text-sm">
-                    {label !== "Current Value" ? `₹${tableCurrentTotal.toLocaleString('en-IN')}` : "-"}
+                    {isIncomeTable ? `₹${tableCurrentTotal.toLocaleString('en-IN')}` : "-"}
                   </td>
+                  {isIncomeTable && <td className="px-2 py-2"></td>}
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2 text-left text-sm">
                     ₹{tableFutureTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
@@ -311,9 +326,9 @@ const FutureValueCalculator: React.FC = () => {
               </tfoot>
             </table>
           </div>
-          {label !== "Current Value" && (
+          {isIncomeTable && (
             <p className="text-[10px] text-muted-foreground mt-2 italic">
-              * Income sources are calculated as annual accumulations growing at the specified ROI.
+              * Income sources are calculated as annual accumulations growing at the specified ROI. "Total Principal" shows the simple sum over {duration} years.
             </p>
           )}
         </CardContent>

@@ -138,6 +138,7 @@ const navItems = [
         type: 'section',
         children: [
           { name: "Growth Calculator", path: "/dashboard/investment-calculator", icon: TrendingUp, type: 'link' },
+          { name: "Asset Allocation", path: "/dashboard/asset-allocation-calculator", icon: PieChart, type: 'link' },
           { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Repeat, type: 'link' },
           { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
           { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },

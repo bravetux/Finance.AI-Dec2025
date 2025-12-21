@@ -18,7 +18,8 @@ import {
   Sparkles,
   BarChart3,
   Percent,
-  CreditCard
+  CreditCard,
+  PieChart
 } from "lucide-react";
 
 const calculatorList = [
@@ -36,6 +37,14 @@ const calculatorList = [
     path: "/dashboard/investment-calculator",
     icon: BarChart3,
     color: "text-indigo-600",
+    category: "Investing"
+  },
+  {
+    name: "Asset Allocation",
+    description: "Project your retirement corpus across Stocks, Bonds, and Cash with different return rates.",
+    path: "/dashboard/asset-allocation-calculator",
+    icon: PieChart,
+    color: "text-orange-500",
     category: "Investing"
   },
   {

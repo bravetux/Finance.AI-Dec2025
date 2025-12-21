@@ -60,7 +60,7 @@ const calculatorList = [
     path: "/dashboard/interest-calculator",
     icon: Percent,
     color: "text-violet-500",
-    category: "General"
+    category: "Interest"
   },
   {
     name: "SWP Calculator",
@@ -76,7 +76,7 @@ const calculatorList = [
     path: "/dashboard/compound-interest-calculator",
     icon: Sparkles,
     color: "text-indigo-500",
-    category: "General"
+    category: "Interest"
   },
   {
     name: "Advance Tax Calculator",

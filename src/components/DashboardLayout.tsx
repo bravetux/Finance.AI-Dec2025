@@ -142,8 +142,16 @@ const navItems = [
           { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
         ]
       },
+      { 
+        name: "Interest", 
+        icon: Percent,
+        type: 'section',
+        children: [
+          { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
+          { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Sparkles, type: 'link' },
+        ]
+      },
       { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
-      { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
       { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
       { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
       { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
@@ -154,7 +162,6 @@ const navItems = [
         icon: MoreHorizontal,
         type: 'section',
         children: [
-          { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Calculator, type: 'link' },
           { name: "Car Affordable Calculator", path: "/dashboard/car-affordable-calculator", icon: Car, type: 'link' },
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Calculator, type: 'link' },
         ]

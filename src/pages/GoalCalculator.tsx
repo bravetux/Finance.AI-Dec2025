@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Calculator, 
   Target, 
   TrendingUp, 
   PieChart as PieChartIcon,
@@ -37,6 +36,46 @@ const formatCurrency = (value: number) => {
   return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 };
 
+const numberToIndianWords = (num: number): string => {
+  if (num === 0) return "Zero";
+  if (num < 0) return "Negative " + numberToIndianWords(Math.abs(num));
+
+  const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  const convertLessThanThousand = (n: number): string => {
+    let res = "";
+    if (n >= 100) {
+      res += units[Math.floor(n / 100)] + " Hundred ";
+      n %= 100;
+    }
+    if (n >= 10 && n <= 19) {
+      res += teens[n - 10];
+    } else if (n >= 20 || n > 0) {
+      res += tens[Math.floor(n / 10)] + (n % 10 > 0 ? " " + units[n % 10] : "");
+    }
+    return res.trim();
+  };
+
+  let result = "";
+  let remaining = Math.floor(num);
+
+  const crore = Math.floor(remaining / 10000000);
+  remaining %= 10000000;
+  const lakh = Math.floor(remaining / 100000);
+  remaining %= 100000;
+  const thousand = Math.floor(remaining / 1000);
+  remaining %= 1000;
+
+  if (crore > 0) result += convertLessThanThousand(crore) + " Crore ";
+  if (lakh > 0) result += convertLessThanThousand(lakh) + " Lakh ";
+  if (thousand > 0) result += convertLessThanThousand(thousand) + " Thousand ";
+  if (remaining > 0) result += convertLessThanThousand(remaining);
+
+  return result.trim() + " Rupees";
+};
+
 const GoalCalculator: React.FC = () => {
   const [goalCost, setGoalCost] = useState(5000000);
   const [amountSaved, setAmountSaved] = useState(500000);
@@ -45,7 +84,6 @@ const GoalCalculator: React.FC = () => {
   const [returnRate, setReturnRate] = useState(12);
   const [unit, setUnit] = useState<DisplayUnit>('lakh');
 
-  // Multipliers
   const LAKH = 100000;
   const CRORE = 10000000;
 
@@ -72,16 +110,10 @@ const GoalCalculator: React.FC = () => {
     const r_monthly = r / 12;
     const n_months = t * 12;
 
-    // 1. Future Value of Goal Cost (Adjusted for Inflation)
     const futureGoalCost = goalCost * Math.pow(1 + i, t);
-
-    // 2. Future Value of Amount Already Saved
     const fvSavedAmount = amountSaved * Math.pow(1 + r, t);
-
-    // 3. Required Corpus (Bridge the gap)
     const requiredCorpus = Math.max(0, futureGoalCost - fvSavedAmount);
 
-    // 4. Required Monthly SIP (Annuity Due: payment at start of month)
     let requiredMonthlySIP = 0;
     if (requiredCorpus > 0 && n_months > 0) {
       if (r_monthly === 0) {
@@ -92,7 +124,6 @@ const GoalCalculator: React.FC = () => {
       }
     }
 
-    // 5. Generate Projections for Tables and Charts
     const yearlyReport: ReportRow[] = [];
     const monthlyReport: ReportRow[] = [];
     const chartPoints = [];
@@ -100,27 +131,18 @@ const GoalCalculator: React.FC = () => {
     let currentBalance = amountSaved;
     let totalInvested = amountSaved;
 
-    chartPoints.push({
-      year: 0,
-      invested: Math.round(totalInvested),
-      balance: Math.round(currentBalance),
-    });
+    chartPoints.push({ year: 0, invested: Math.round(totalInvested), balance: Math.round(currentBalance) });
 
     for (let year = 1; year <= t; year++) {
       let annualSIP = 0;
       let annualInterest = 0;
-
       for (let month = 1; month <= 12; month++) {
-        // Add SIP at start of month
         currentBalance += requiredMonthlySIP;
         totalInvested += requiredMonthlySIP;
         annualSIP += requiredMonthlySIP;
-
-        // Earn interest on current month's balance
         const interest = currentBalance * r_monthly;
         currentBalance += interest;
         annualInterest += interest;
-
         monthlyReport.push({
           period: (year - 1) * 12 + month,
           label: `Month ${(year - 1) * 12 + month}`,
@@ -129,7 +151,6 @@ const GoalCalculator: React.FC = () => {
           endBalance: currentBalance
         });
       }
-
       yearlyReport.push({
         period: year,
         label: `Year ${year}`,
@@ -137,23 +158,11 @@ const GoalCalculator: React.FC = () => {
         returnsEarned: annualInterest,
         endBalance: currentBalance
       });
-
-      chartPoints.push({
-        year: year,
-        invested: Math.round(totalInvested),
-        balance: Math.round(currentBalance),
-      });
+      chartPoints.push({ year: year, invested: Math.round(totalInvested), balance: Math.round(currentBalance) });
     }
 
     return {
-      results: {
-        futureGoalCost,
-        fvSavedAmount,
-        requiredCorpus,
-        requiredMonthlySIP,
-        totalInvestment: totalInvested,
-        totalReturns: currentBalance - totalInvested,
-      },
+      results: { futureGoalCost, fvSavedAmount, requiredCorpus, requiredMonthlySIP, totalInvestment: totalInvested, totalReturns: currentBalance - totalInvested },
       yearlyData: yearlyReport,
       monthlyData: monthlyReport,
       chartData: chartPoints,
@@ -175,7 +184,6 @@ const GoalCalculator: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Input Column */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center mb-2">
@@ -195,42 +203,28 @@ const GoalCalculator: React.FC = () => {
             <CardDescription>Adjust inputs to match your specific goal.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Current Goal Cost ({unit === 'actual' ? '₹' : unit})</Label>
-                <span className="font-bold text-primary">{formatCurrency(goalCost)}</span>
-              </div>
-              <Slider 
-                value={[goalCost / currentMultiplier]} 
-                onValueChange={(v) => handleGoalCostChange(v[0])} 
-                min={unit === 'crore' ? 0.01 : 1} 
-                max={unit === 'crore' ? 50 : unit === 'lakh' ? 500 : 10000000} 
-                step={unit === 'crore' ? 0.1 : unit === 'lakh' ? 1 : 10000} 
-              />
+            <div className="space-y-2">
+              <Label>Current Goal Cost ({unit === 'actual' ? '₹' : unit})</Label>
               <Input 
                 type="number" 
                 value={Number((goalCost / currentMultiplier).toFixed(2))} 
                 onChange={(e) => handleGoalCostChange(Number(e.target.value))} 
               />
+              <p className="text-[10px] text-muted-foreground font-medium italic">
+                {numberToIndianWords(goalCost)}
+              </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Already Saved ({unit === 'actual' ? '₹' : unit})</Label>
-                <span className="font-bold text-primary">{formatCurrency(amountSaved)}</span>
-              </div>
-              <Slider 
-                value={[amountSaved / currentMultiplier]} 
-                onValueChange={(v) => handleAmountSavedChange(v[0])} 
-                min={0} 
-                max={unit === 'crore' ? 20 : unit === 'lakh' ? 200 : 5000000} 
-                step={unit === 'crore' ? 0.05 : unit === 'lakh' ? 0.5 : 5000} 
-              />
+            <div className="space-y-2">
+              <Label>Already Saved ({unit === 'actual' ? '₹' : unit})</Label>
               <Input 
                 type="number" 
                 value={Number((amountSaved / currentMultiplier).toFixed(2))} 
                 onChange={(e) => handleAmountSavedChange(Number(e.target.value))} 
               />
+              <p className="text-[10px] text-muted-foreground font-medium italic">
+                {numberToIndianWords(amountSaved)}
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -254,27 +248,20 @@ const GoalCalculator: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Visualization & Result Column */}
         <div className="lg:col-span-2 space-y-6">
           <div className="grid sm:grid-cols-2 gap-4">
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="pt-6">
                 <p className="text-xs uppercase font-bold text-muted-foreground mb-1">Required Monthly SIP</p>
                 <p className="text-3xl font-black text-primary">{formatCurrency(results.requiredMonthlySIP)}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                  <ArrowUpCircle className="h-3 w-3 text-green-600" />
-                  <span>To bridge {formatCurrency(results.requiredCorpus)} gap</span>
-                </div>
+                <p className="text-[10px] text-muted-foreground italic mt-1">{numberToIndianWords(results.requiredMonthlySIP)} / month</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <p className="text-xs uppercase font-bold text-muted-foreground mb-1">Future Goal Cost</p>
                 <p className="text-3xl font-bold text-orange-600">{formatCurrency(results.futureGoalCost)}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                  <HelpCircle className="h-3 w-3" />
-                  <span>Adjusted for {inflationRate}% inflation</span>
-                </div>
+                <p className="text-[10px] text-muted-foreground italic mt-1">{numberToIndianWords(results.futureGoalCost)}</p>
               </CardContent>
             </Card>
           </div>
@@ -284,14 +271,12 @@ const GoalCalculator: React.FC = () => {
               <TabsTrigger value="growth"><TrendingUp className="mr-2 h-4 w-4" /> Accumulation Path</TabsTrigger>
               <TabsTrigger value="allocation"><PieChartIcon className="mr-2 h-4 w-4" /> Contribution Split</TabsTrigger>
             </TabsList>
-            
             <TabsContent value="growth" className="h-[350px] pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/><stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -303,22 +288,11 @@ const GoalCalculator: React.FC = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </TabsContent>
-
             <TabsContent value="allocation" className="h-[350px] pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={100} paddingAngle={5} dataKey="value">
+                    {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(val: number) => formatCurrency(val)} />
                   <Legend />
@@ -328,8 +302,6 @@ const GoalCalculator: React.FC = () => {
           </Tabs>
         </div>
       </div>
-
-      {/* Detailed Amortization Report */}
       <ReportTable yearlyData={yearlyData} monthlyData={monthlyData} />
     </div>
   );

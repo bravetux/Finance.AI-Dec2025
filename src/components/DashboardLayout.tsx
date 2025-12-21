@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Link, Outlet } from "react-router-dom";
 import {
   ResizableHandle,
@@ -42,6 +42,8 @@ import {
   CreditCard,
   Handshake,
   DoorOpen,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -53,6 +55,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 
 const navItems = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, type: 'link' },
@@ -184,9 +188,12 @@ const navItems = [
 
 const DashboardLayout: React.FC = () => {
   const isMobile = useIsMobile();
-  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
 
   const handleAccordionClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isCollapsed) return;
     const trigger = e.currentTarget;
     if (trigger.getAttribute('data-state') === 'closed') {
       const accordionItem = trigger.closest('[data-radix-accordion-item]');
@@ -198,13 +205,33 @@ const DashboardLayout: React.FC = () => {
     }
   };
 
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col p-4 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <Link to="/" className="text-2xl font-bold mb-6 text-sidebar-primary-foreground">
-        Financial Planner
-      </Link>
+  const toggleCollapse = () => {
+    if (isCollapsed) {
+      sidebarPanelRef.current?.expand();
+    } else {
+      sidebarPanelRef.current?.collapse();
+    }
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const SidebarContent = ({ collapsed }: { collapsed?: boolean }) => (
+    <div className={cn(
+      "flex h-full flex-col p-4 bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300",
+      collapsed ? "p-2 items-center" : "p-4"
+    )}>
+      <div className={cn("flex items-center mb-6", collapsed ? "justify-center" : "justify-between")}>
+        <Link to="/" className={cn("font-bold text-sidebar-primary-foreground truncate transition-all", collapsed ? "w-0 overflow-hidden" : "text-xl block")}>
+          Financial Planner
+        </Link>
+        {!isMobile && (
+          <Button variant="ghost" size="icon" onClick={toggleCollapse} className="h-8 w-8">
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        )}
+      </div>
+
       <ScrollArea className="flex-1">
-        <nav className="flex flex-col gap-1 pr-4">
+        <nav className={cn("flex flex-col gap-1", collapsed ? "" : "pr-4")}>
           {navItems.map((item) =>
             item.type === 'section' && item.children ? (
               <Accordion key={item.name} type="single" collapsible className="w-full">
@@ -212,14 +239,17 @@ const DashboardLayout: React.FC = () => {
                   <div className="flex items-center gap-1 group">
                     <AccordionTrigger
                       onClick={handleAccordionClick}
-                      className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium"
+                      className={cn(
+                        "justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium transition-all",
+                        collapsed ? "px-2 justify-center [&>svg:last-child]:hidden" : ""
+                      )}
                     >
                       <div className="flex items-center">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
+                        <item.icon className={cn("h-4 w-4", collapsed ? "m-0" : "mr-2")} aria-label={item.name} />
+                        {!collapsed && <span>{item.name}</span>}
                       </div>
                     </AccordionTrigger>
-                    {item.path && (
+                    {!collapsed && item.path && (
                       <Link 
                         to={item.path} 
                         className="p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sidebar-accent rounded-md"
@@ -230,82 +260,91 @@ const DashboardLayout: React.FC = () => {
                       </Link>
                     )}
                   </div>
-                  <AccordionContent className="pt-1 pb-0">
-                    <div className="flex flex-col gap-1 pl-4">
-                      {item.children.map((child) =>
-                        child.type === 'section' && child.children ? (
-                          <Accordion key={child.name} type="single" collapsible className="w-full">
-                            <AccordionItem value={child.name} className="border-none">
-                              <AccordionTrigger
-                                onClick={handleAccordionClick}
-                                className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full"
-                              >
-                                <div className="flex items-center">
-                                  <child.icon className="mr-2 h-4 w-4" />
-                                  {child.name}
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="pt-1 pb-0">
-                                <div className="flex flex-col gap-1 pl-4">
-                                  {child.children.map((grandchild) => (
-                                    <Button
-                                      key={grandchild.name}
-                                      variant="ghost"
-                                      className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                      asChild
-                                      onClick={() => isMobile && setIsSheetOpen(false)}
-                                    >
-                                      <Link to={grandchild.path!}>
-                                        <grandchild.icon className="mr-2 h-4 w-4" />
-                                        {grandchild.name}
-                                      </Link>
-                                    </Button>
-                                  ))}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        ) : (
-                          <Button
-                            key={child.name}
-                            variant="ghost"
-                            className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                            asChild
-                            onClick={() => isMobile && setIsSheetOpen(false)}
-                          >
-                            <Link to={child.path!}>
-                              <child.icon className="mr-2 h-4 w-4" />
-                              {child.name}
-                            </Link>
-                          </Button>
-                        )
-                      )}
-                    </div>
-                  </AccordionContent>
+                  {!collapsed && (
+                    <AccordionContent className="pt-1 pb-0">
+                      <div className="flex flex-col gap-1 pl-4">
+                        {item.children.map((child) =>
+                          child.type === 'section' && child.children ? (
+                            <Accordion key={child.name} type="single" collapsible className="w-full">
+                              <AccordionItem value={child.name} className="border-none">
+                                <AccordionTrigger
+                                  onClick={handleAccordionClick}
+                                  className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full"
+                                >
+                                  <div className="flex items-center">
+                                    <child.icon className="mr-2 h-4 w-4" />
+                                    {child.name}
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-1 pb-0">
+                                  <div className="flex flex-col gap-1 pl-4">
+                                    {child.children.map((grandchild) => (
+                                      <Button
+                                        key={grandchild.name}
+                                        variant="ghost"
+                                        className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                        asChild
+                                        onClick={() => isMobile && setIsSheetOpen(false)}
+                                      >
+                                        <Link to={grandchild.path!}>
+                                          <grandchild.icon className="mr-2 h-4 w-4" />
+                                          {grandchild.name}
+                                        </Link>
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          ) : (
+                            <Button
+                              key={child.name}
+                              variant="ghost"
+                              className="justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              asChild
+                              onClick={() => isMobile && setIsSheetOpen(false)}
+                            >
+                              <Link to={child.path!}>
+                                <child.icon className="mr-2 h-4 w-4" />
+                                {child.name}
+                              </Link>
+                            </Button>
+                          )
+                        )}
+                      </div>
+                    </AccordionContent>
+                  )}
                 </AccordionItem>
               </Accordion>
             ) : (
               <Link
                 key={item.name}
                 to={item.path!}
+                title={item.name}
                 onClick={() => isMobile && setIsSheetOpen(false)}
-                className="flex items-center justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium"
+                className={cn(
+                  "flex items-center text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline rounded-md px-3 py-2 w-full font-medium transition-all",
+                  collapsed ? "justify-center px-2" : "justify-start"
+                )}
               >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.name}
+                <item.icon className={cn("h-4 w-4", collapsed ? "m-0" : "mr-2")} />
+                {!collapsed && <span>{item.name}</span>}
               </Link>
             )
           )}
         </nav>
       </ScrollArea>
-      <div className="mt-auto pt-4">
-        <div className="text-sm text-sidebar-foreground/80 px-2 mb-2">
-          <p className="font-semibold">Designed and Developed by B.Vignesh Kumar</p>
-          <a href="mailto:vigneshkumarb@bravetux.com" className="hover:underline">
-            vigneshkumarb@bravetux.com
-          </a>
-        </div>
-        <div className="flex items-center justify-end">
+
+      <div className={cn("mt-auto pt-4 flex flex-col", collapsed ? "items-center" : "")}>
+        {!collapsed && (
+          <div className="text-sm text-sidebar-foreground/80 px-2 mb-2">
+            <p className="font-semibold">Designed and Developed by B.Vignesh Kumar</p>
+            <a href="mailto:vigneshkumarb@bravetux.com" className="hover:underline">
+              vigneshkumarb@bravetux.com
+            </a>
+          </div>
+        )}
+        <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-end")}>
           <ThemeToggle />
         </div>
       </div>
@@ -338,8 +377,18 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen w-full">
-      <ResizablePanel defaultSize={20} minSize={15} maxSize={25}>
-        <SidebarContent />
+      <ResizablePanel 
+        ref={sidebarPanelRef}
+        defaultSize={20} 
+        minSize={15} 
+        maxSize={25}
+        collapsible={true}
+        collapsedSize={4}
+        onCollapse={() => setIsCollapsed(true)}
+        onExpand={() => setIsCollapsed(false)}
+        className="transition-all duration-300 ease-in-out"
+      >
+        <SidebarContent collapsed={isCollapsed} />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize={80}>

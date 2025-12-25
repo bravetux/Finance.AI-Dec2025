@@ -3,8 +3,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, ArrowRightLeft, Wallet, Landmark, GraduationCap } from 'lucide-react';
-import TopicCard from '@/fedu/TopicCard';
-import QuoteSection from '@/fedu/QuoteSection';
+import TopicCard from '../fedu/TopicCard';
+import QuoteSection from '../fedu/QuoteSection';
 
 const MoneyMindsPage: React.FC = () => {
   return (

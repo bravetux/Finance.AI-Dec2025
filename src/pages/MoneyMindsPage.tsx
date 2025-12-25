@@ -3,9 +3,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import FinanceSidebar from '@/components/FinanceSidebar';
-import SIPPage from './SIPPage';
-import SWPPage from './SWPPage';
-import STPPage from './STPPage';
+import SIPPage from '@/fedu/SIPPage';
+import SWPPage from '@/fedu/SWPPage';
+import STPPage from '@/fedu/STPPage';
 
 // Placeholder components for other sections
 const PlaceholderContent: React.FC<{ title: string }> = ({ title }) => (

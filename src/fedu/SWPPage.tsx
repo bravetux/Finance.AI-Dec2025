@@ -24,7 +24,7 @@ const SWPPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">Invested in Mutual Funds</p>
           </div>
 
-          {/* Main Flow Arrow 1 (Optional, but helps continuity) */}
+          {/* Main Flow Arrow 1 */}
           <div className="flex items-center justify-center">
             <ArrowRight className="w-8 h-8 text-gray-400 hidden md:block" />
             <ArrowDown className="w-8 h-8 text-gray-400 md:hidden" />
@@ -37,12 +37,12 @@ const SWPPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">Units are redeemed regularly.</p>
           </div>
 
-          {/* Step 3: Income Stream & Flow Arrow (The specific request) */}
+          {/* Step 3: Income Stream & Flow Arrow */}
           <div className="flex flex-col md:flex-row items-center">
             <span className="font-semibold text-red-600 whitespace-nowrap">Income Stream</span>
-            {/* Gray arrow moved 70px after the text */}
-            <ArrowRight className="w-8 h-8 text-gray-500 hidden md:block ml-[70px]" />
-            <ArrowDown className="w-8 h-8 text-gray-500 md:hidden mt-[70px]" />
+            {/* Gray arrow moved 40px left (from 70px to 30px) */}
+            <ArrowRight className="w-8 h-8 text-gray-500 hidden md:block ml-[30px]" />
+            <ArrowDown className="w-8 h-8 text-gray-500 md:hidden mt-[30px]" />
           </div>
 
           {/* Step 4: Remaining Growth */}

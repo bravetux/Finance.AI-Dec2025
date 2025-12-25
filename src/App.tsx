@@ -4,7 +4,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import EducationHeader from './fedu/EducationHeader';
 import Index from './pages/Index';
-import FinanceEducationPage from './pages/FinanceEducationPage';
 import MoneyMindsPage from './pages/MoneyMindsPage';
 
 // We wrap the entire application in BrowserRouter in index.tsx/main.tsx
@@ -14,7 +13,9 @@ const App: React.FC = () => {
       <EducationHeader />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/finance-education" element={<FinanceEducationPage />} />
+        {/* Both / and /finance-education now point to the combined landing page */}
+        <Route path="/finance-education" element={<Index />} /> 
+        
         {/* Nested routes for Money Minds content */}
         <Route path="/money-minds/*" element={<MoneyMindsPage />} />
         

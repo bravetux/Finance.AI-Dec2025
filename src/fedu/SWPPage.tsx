@@ -29,13 +29,17 @@ const SWPPage: React.FC = () => {
             <Repeat className="w-10 h-10 text-red-600 mb-2" />
             <p className="font-semibold">Fixed Periodic Withdrawal</p>
             <p className="text-sm text-muted-foreground">Units are redeemed regularly.</p>
-            {/* Visualizing income flow */}
-            <div className="absolute -bottom-10 md:bottom-auto md:-right-20 md:top-1/2 flex items-center">
-                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block" />
-                <ArrowDown className="w-6 h-6 text-red-500 md:hidden" />
-                <span className="ml-2 text-sm font-medium text-red-600">Income Stream</span>
+            
+            {/* Visualizing income flow - Adjusted positioning */}
+            <div className="absolute top-full mt-4 md:mt-0 md:top-1/2 md:left-full md:ml-8 flex items-center justify-center md:justify-start w-full md:w-auto">
+                <ArrowDown className="w-6 h-6 text-red-500 md:hidden mr-2" />
+                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block mr-2" />
+                <span className="text-sm font-medium text-red-600">Income Stream</span>
             </div>
           </div>
+
+          {/* Spacer for mobile layout */}
+          <div className="h-12 md:hidden"></div> 
 
           {/* Arrow 2: Growth */}
           <div className="flex items-center hidden md:block">

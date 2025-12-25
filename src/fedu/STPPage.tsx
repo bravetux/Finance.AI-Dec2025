@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { ArrowRightLeft, Zap, Target } from 'lucide-react';
+import { ArrowRightLeft, Zap, Target, Banknote, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const STPPage: React.FC = () => {
@@ -11,6 +11,34 @@ const STPPage: React.FC = () => {
       <p className="text-xl text-muted-foreground mb-8 max-w-3xl">
         STP is a strategy where an investor transfers a fixed amount of money periodically from one mutual fund scheme (usually a debt or liquid fund) to another (usually an equity fund) within the same fund house.
       </p>
+
+      {/* --- INFOGRAPHIC SECTION --- */}
+      <div className="mb-12 p-6 border rounded-xl bg-secondary/30">
+        <h2 className="text-2xl font-bold mb-4 text-center">STP Explained Visually: Gradual Market Entry</h2>
+        <div className="flex flex-col md:flex-row items-center justify-around text-center space-y-6 md:space-y-0 md:space-x-8">
+          
+          {/* Step 1: Source Fund */}
+          <div className="flex flex-col items-center p-4 border-2 border-orange-500 rounded-lg bg-orange-100/50 dark:bg-orange-900/30">
+            <Banknote className="w-10 h-10 text-orange-600 mb-2" />
+            <p className="font-semibold">Source Fund (Liquid/Debt)</p>
+            <p className="text-sm text-muted-foreground">Lump sum parked here (Low Risk)</p>
+          </div>
+
+          {/* Transfer Arrow */}
+          <div className="flex flex-col items-center">
+            <ArrowRightLeft className="w-10 h-10 text-cyan-500 animate-pulse" />
+            <p className="text-sm font-medium text-cyan-600 mt-1">Periodic Transfer</p>
+          </div>
+
+          {/* Step 3: Target Fund */}
+          <div className="flex flex-col items-center p-4 border-2 border-green-500 rounded-lg bg-green-100/50 dark:bg-green-900/30">
+            <TrendingUp className="w-10 h-10 text-green-600 mb-2" />
+            <p className="font-semibold">Target Fund (Equity)</p>
+            <p className="text-sm text-muted-foreground">Gradual investment (High Growth)</p>
+          </div>
+        </div>
+      </div>
+      {/* ----------------------------- */}
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <div className="space-y-4">

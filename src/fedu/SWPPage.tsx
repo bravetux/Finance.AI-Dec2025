@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Wallet, Repeat, Shield } from 'lucide-react';
+import { Wallet, Repeat, Shield, ArrowRight, ArrowDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const SWPPage: React.FC = () => {
@@ -11,6 +11,49 @@ const SWPPage: React.FC = () => {
       <p className="text-xl text-muted-foreground mb-8 max-w-3xl">
         SWP allows investors to withdraw a fixed amount of money at regular intervals (monthly, quarterly, etc.) from their mutual fund investments. It is primarily used during the distribution or retirement phase.
       </p>
+
+      {/* --- INFOGRAPHIC SECTION --- */}
+      <div className="mb-12 p-6 border rounded-xl bg-secondary/30">
+        <h2 className="text-2xl font-bold mb-4 text-center">SWP Explained Visually: Income Generation from Corpus</h2>
+        <div className="flex flex-col md:flex-row items-center justify-around text-center space-y-8 md:space-y-0 md:space-x-8">
+          
+          {/* Step 1: Initial Corpus */}
+          <div className="flex flex-col items-center">
+            <Wallet className="w-10 h-10 text-indigo-600 mb-2" />
+            <p className="font-semibold">Large Initial Corpus</p>
+            <p className="text-sm text-muted-foreground">Invested in Mutual Funds</p>
+          </div>
+
+          {/* Arrow 1: Withdrawal */}
+          <div className="flex flex-col items-center relative">
+            <Repeat className="w-10 h-10 text-red-600 mb-2" />
+            <p className="font-semibold">Fixed Periodic Withdrawal</p>
+            <p className="text-sm text-muted-foreground">Units are redeemed regularly.</p>
+            {/* Visualizing income flow */}
+            <div className="absolute -bottom-10 md:bottom-auto md:-right-20 md:top-1/2 flex items-center">
+                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block" />
+                <ArrowDown className="w-6 h-6 text-red-500 md:hidden" />
+                <span className="ml-2 text-sm font-medium text-red-600">Income Stream</span>
+            </div>
+          </div>
+
+          {/* Arrow 2: Growth */}
+          <div className="flex items-center hidden md:block">
+            <ArrowRight className="w-8 h-8 text-gray-500" />
+          </div>
+          <div className="flex items-center md:hidden">
+            <ArrowDown className="w-8 h-8 text-gray-500" />
+          </div>
+
+          {/* Step 3: Remaining Growth */}
+          <div className="flex flex-col items-center">
+            <Shield className="w-10 h-10 text-green-600 mb-2" />
+            <p className="font-semibold">Remaining Corpus Grows</p>
+            <p className="text-sm text-muted-foreground">Capital preservation and potential growth.</p>
+          </div>
+        </div>
+      </div>
+      {/* ----------------------------- */}
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <div className="space-y-4">

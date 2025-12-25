@@ -1,28 +1,130 @@
-"use client";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import DashboardLayout from "./components/DashboardLayout";
+import Landing from "./pages/Landing";
+import Dashboard from "./pages/Dashboard";
+import Cashflow from "./pages/Cashflow";
+import NetWorthCalculator from "./pages/NetWorthCalculator";
+import FutureValueCalculator from "./pages/FutureValueCalculator";
+import Goals from "./pages/Goals";
+import RetirementDashboard from "./pages/RetirementDashboard";
+import ProjectedCashflow from "./pages/ProjectedCashflow";
+import AIPrompt from "./pages/AIPrompt";
+import Reports from "./pages/Reports";
+import NotFound from "./pages/NotFound";
+import FireCalculator from "./pages/FireCalculator";
+import ExpenseReductionPlanner from "./pages/ExpenseReductionPlanner";
+import RealEstate from "./pages/RealEstate";
+import DomesticEquity from "./pages/DomesticEquity";
+import USEquity from "./pages/USEquity";
+import Debt from "./pages/Debt";
+import Gold from "./pages/Gold";
+import MutualFundAllocation from "./pages/MutualFundAllocation";
+import MutualFundSIP from "./pages/MutualFundSIP";
+import CashflowSummary from "./pages/CashflowSummary";
+import Silver from "./pages/Silver";
+import Platinum from "./pages/Platinum";
+import Diamond from "./pages/Diamond";
+import PreciousMetalsSummary from "./pages/PreciousMetalsSummary";
+import SmallCase from "./pages/SmallCase";
+import CanYouRetireNow from "./pages/CanYouRetireNow";
+import PostRetirementStrategy from "./pages/PostRetirementStrategy";
+import LoanTracker from "./pages/LoanTracker";
+import InsuranceHub from "./pages/InsuranceHub";
+import Cryptocurrency from "./pages/Cryptocurrency";
+import FIDOK from "./pages/FIDOK";
+import SIPCalculator from "./pages/SIPCalculator";
+import SWPCalculator from "./pages/SWPCalculator";
+import PPFCalculator from "./pages/PPFCalculator";
+import EPFCalculator from "./pages/EPFCalculator";
+import GoalCalculator from "./pages/GoalCalculator";
+import ROICalculator from "./pages/ROICalculator";
+import CarAffordableCalculator from "./pages/CarAffordableCalculator";
+import P2PLendingCalculator from "./pages/P2PLendingCalculator";
+import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
+import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
+import InterestCalculator from "./pages/InterestCalculator";
+import InvestmentCalculator from "./pages/InvestmentCalculator";
+import EMICalculator from "./pages/EMICalculator";
+import PercentageCalculator from "./pages/PercentageCalculator";
+import AssetAllocationCalculator from "./pages/AssetAllocationCalculator";
+import Calculators from "./pages/Calculators";
+import Features from "./pages/Features";
+import FinanceEducation from "./pages/FinanceEducation";
+import RentVacateCalculator from "./pages/RentVacateCalculator";
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './pages/Landing';
-import FinanceEducation from './pages/FinanceEducation';
-import SIPPage from './fedu/SIPPage';
-import SWPPage from './fedu/SWPPage';
-import STPPage from './fedu/STPPage';
+const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/finance-education" element={<FinanceEducation />} />
-        <Route path="/finance-education/sip" element={<SIPPage />} />
-        <Route path="/finance-education/swp" element={<SWPPage />} />
-        <Route path="/finance-education/stp" element={<STPPage />} />
-        {/* Placeholder routes for header links */}
-        <Route path="/features" element={<div className="p-8">Features Page Placeholder</div>} />
-        <Route path="/dashboard" element={<div className="p-8">Dashboard Page Placeholder</div>} />
-      </Routes>
-    </Router>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/finance-education" element={<FinanceEducation />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="cashflow" element={<Cashflow />} />
+              <Route path="cashflow-summary" element={<CashflowSummary />} />
+              <Route path="projected-cashflow" element={<ProjectedCashflow />} />
+              <Route path="net-worth" element={<NetWorthCalculator />} />
+              <Route path="real-estate" element={<RealEstate />} />
+              <Route path="domestic-equity" element={<DomesticEquity />} />
+              <Route path="mutual-fund-allocation" element={<MutualFundAllocation />} />
+              <Route path="mutual-fund-sip" element={<MutualFundSIP />} />
+              <Route path="small-case" element={<SmallCase />} />
+              <Route path="us-equity" element={<USEquity />} />
+              <Route path="debt" element={<Debt />} />
+              <Route path="precious-metals-summary" element={<PreciousMetalsSummary />} />
+              <Route path="gold" element={<Gold />} />
+              <Route path="silver" element={<Silver />} />
+              <Route path="platinum" element={<Platinum />} />
+              <Route path="diamond" element={<Diamond />} />
+              <Route path="cryptocurrency" element={<Cryptocurrency />} />
+              <Route path="loan-tracker" element={<LoanTracker />} />
+              <Route path="insurance-hub" element={<InsuranceHub />} />
+              <Route path="fidok" element={<FIDOK />} />
+              <Route path="future-value" element={<FutureValueCalculator />} />
+              <Route path="goals" element={<Goals />} />
+              <Route path="retirement" element={<RetirementDashboard />} />
+              <Route path="can-you-retire-now" element={<CanYouRetireNow />} />
+              <Route path="fire-calculator" element={<FireCalculator />} />
+              <Route path="post-retirement-strategy" element={<PostRetirementStrategy />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="ai-prompt" element={<AIPrompt />} />
+              <Route path="calculators" element={<Calculators />} />
+              <Route path="goal-calculator" element={<GoalCalculator />} />
+              <Route path="sip-calculator" element={<SIPCalculator />} />
+              <Route path="swp-calculator" element={<SWPCalculator />} />
+              <Route path="ppf-calculator" element={<PPFCalculator />} />
+              <Route path="epf-calculator" element={<EPFCalculator />} />
+              <Route path="investment-calculator" element={<InvestmentCalculator />} />
+              <Route path="interest-calculator" element={<InterestCalculator />} />
+              <Route path="roi-calculator" element={<ROICalculator />} />
+              <Route path="emi-calculator" element={<EMICalculator />} />
+              <Route path="percentage-calculator" element={<PercentageCalculator />} />
+              <Route path="asset-allocation-calculator" element={<AssetAllocationCalculator />} />
+              <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />
+              <Route path="p2p-lending-calculator" element={<P2PLendingCalculator />} />
+              <Route path="advance-tax-calculator" element={<AdvanceTaxCalculator />} />
+              <Route path="compound-interest-calculator" element={<CompoundInterestCalculator />} />
+              <Route path="expense-reduction-planner" element={<ExpenseReductionPlanner />} />
+              <Route path="rent-vacate-calculator" element={<RentVacateCalculator />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;

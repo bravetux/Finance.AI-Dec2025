@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Index from './pages/Index';
+import Landing from './pages/Landing';
 import FinanceEducation from './pages/FinanceEducation';
 import SIPPage from './fedu/SIPPage';
 import SWPPage from './fedu/SWPPage';
@@ -12,7 +12,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/finance-education" element={<FinanceEducation />} />
         <Route path="/finance-education/sip" element={<SIPPage />} />
         <Route path="/finance-education/swp" element={<SWPPage />} />

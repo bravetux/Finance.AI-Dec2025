@@ -32,9 +32,10 @@ const SWPPage: React.FC = () => {
             
             {/* Visualizing income flow - Adjusted positioning */}
             <div className="absolute top-full mt-4 md:mt-0 md:top-1/2 md:left-full md:ml-8 flex items-center justify-center md:justify-start w-full md:w-auto">
-                <ArrowDown className="w-6 h-6 text-red-500 md:hidden mr-2" />
-                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block mr-2" />
-                <span className="text-sm font-medium text-red-600">Income Stream  </span>
+                {/* Added mr-5 to the arrow icons */}
+                <ArrowDown className="w-6 h-6 text-red-500 md:hidden mr-5" />
+                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block mr-5" />
+                <span className="text-sm font-medium text-red-600">Income Stream</span>
             </div>
           </div>
 

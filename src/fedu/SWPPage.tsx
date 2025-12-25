@@ -24,25 +24,23 @@ const SWPPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">Invested in Mutual Funds</p>
           </div>
 
-          {/* Arrow 1: Withdrawal */}
+          {/* Step 2: Withdrawal */}
           <div className="flex flex-col items-center relative">
             <Repeat className="w-10 h-10 text-red-600 mb-2" />
             <p className="font-semibold">Fixed Periodic Withdrawal</p>
             <p className="text-sm text-muted-foreground">Units are redeemed regularly.</p>
             
-            {/* Visualizing income flow - Updated font size and arrow size to match others */}
+            {/* Visualizing income flow branch */}
             <div className="absolute top-full mt-4 md:mt-0 md:top-1/2 md:left-full md:ml-4 flex items-center justify-center md:justify-start w-full md:w-max">
                 <span className="font-semibold text-red-600">Income Stream</span>
-                {/* Arrow size changed to w-8 h-8 to match other connecting arrows */}
-                <ArrowDown className="w-8 h-8 text-red-500 md:hidden ml-5" />
-                <ArrowRight className="w-8 h-8 text-red-500 hidden md:block ml-5" />
+                {/* Red arrows removed as requested */}
             </div>
           </div>
 
           {/* Spacer for mobile layout */}
           <div className="h-16 md:hidden"></div> 
 
-          {/* Arrow 2: Growth */}
+          {/* Main Path Arrow: Growth */}
           <div className="flex items-center hidden md:block">
             <ArrowRight className="w-8 h-8 text-gray-500" />
           </div>

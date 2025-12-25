@@ -56,6 +56,9 @@ const Features: React.FC = () => {
             <Link to="/features" className="text-sm font-medium text-primary">
               Features
             </Link>
+            <Link to="/finance-education" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+              Education
+            </Link>
             <a href="https://tax-compute.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
               Tax Planning
             </a>
@@ -74,6 +77,7 @@ const Features: React.FC = () => {
               <SheetContent side="right">
                 <div className="flex flex-col gap-4 p-4">
                   <Link to="/features" className="text-lg font-medium text-primary">Features</Link>
+                  <Link to="/finance-education" className="text-lg font-medium">Education</Link>
                   <a href="https://tax-compute.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-lg font-medium">Tax Planning</a>
                   <hr/>
                   <div className="flex justify-between items-center">

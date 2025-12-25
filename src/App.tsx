@@ -54,6 +54,7 @@ import PercentageCalculator from "./pages/PercentageCalculator";
 import AssetAllocationCalculator from "./pages/AssetAllocationCalculator";
 import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
+import FinanceEducation from "./pages/FinanceEducation";
 import RentVacateCalculator from "./pages/RentVacateCalculator";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/finance-education" element={<FinanceEducation />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="cashflow" element={<Cashflow />} />

@@ -2,24 +2,29 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import EducationHeader from './fedu/EducationHeader';
 import Index from './pages/Index';
-import SIPPage from './fedu/SIPPage';
-import STPPage from './fedu/STPPage';
-import SWPPage from './fedu/SWPPage';
-import BondsPage from './pages/BondsPage';
+import MoneyMindsPage from './pages/MoneyMindsPage';
 
-function App() {
+// We wrap the entire application in BrowserRouter in index.tsx/main.tsx
+const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <EducationHeader />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/finance-education/sip" element={<SIPPage />} />
-        <Route path="/finance-education/stp" element={<STPPage />} />
-        <Route path="/finance-education/swp" element={<SWPPage />} />
-        <Route path="/money-minds/bonds" element={<BondsPage />} />
+        {/* Both / and /finance-education now point to the combined landing page */}
+        <Route path="/finance-education" element={<Index />} /> 
+        
+        {/* Nested routes for Money Minds content */}
+        <Route path="/money-minds/*" element={<MoneyMindsPage />} />
+        
+        {/* Placeholder routes for other header links */}
+        <Route path="/features" element={<div className="container py-12">Features Page</div>} />
+        <Route path="/dashboard" element={<div className="container py-12">Dashboard Page</div>} />
       </Routes>
     </BrowserRouter>
   );
-}
+};
 
 export default App;

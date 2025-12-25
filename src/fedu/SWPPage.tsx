@@ -15,7 +15,6 @@ const SWPPage: React.FC = () => {
       {/* --- INFOGRAPHIC SECTION --- */}
       <div className="mb-12 p-6 border rounded-xl bg-secondary/30">
         <h2 className="text-2xl font-bold mb-4 text-center">SWP Explained Visually: Income Generation from Corpus</h2>
-        {/* Increased space-x-8 to space-x-16 on desktop to give the 'Income Stream' branch more room */}
         <div className="flex flex-col md:flex-row items-center justify-around text-center space-y-8 md:space-y-0 md:space-x-16">
           
           {/* Step 1: Initial Corpus */}
@@ -31,12 +30,12 @@ const SWPPage: React.FC = () => {
             <p className="font-semibold">Fixed Periodic Withdrawal</p>
             <p className="text-sm text-muted-foreground">Units are redeemed regularly.</p>
             
-            {/* Visualizing income flow - Text first, then Arrow */}
+            {/* Visualizing income flow - Updated font size and arrow size to match others */}
             <div className="absolute top-full mt-4 md:mt-0 md:top-1/2 md:left-full md:ml-4 flex items-center justify-center md:justify-start w-full md:w-max">
-                <span className="text-sm font-medium text-red-600">Income Stream</span>
-                {/* Arrow now follows the text with a margin-left of 5 (ml-5) */}
-                <ArrowDown className="w-6 h-6 text-red-500 md:hidden ml-5" />
-                <ArrowRight className="w-6 h-6 text-red-500 hidden md:block ml-5" />
+                <span className="font-semibold text-red-600">Income Stream</span>
+                {/* Arrow size changed to w-8 h-8 to match other connecting arrows */}
+                <ArrowDown className="w-8 h-8 text-red-500 md:hidden ml-5" />
+                <ArrowRight className="w-8 h-8 text-red-500 hidden md:block ml-5" />
             </div>
           </div>
 

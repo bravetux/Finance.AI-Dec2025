@@ -1,12 +1,10 @@
 "use client";
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wallet, GraduationCap, TrendingUp, ShieldCheck, PiggyBank, Lightbulb, Menu } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { TrendingUp, ShieldCheck, PiggyBank, Lightbulb, Wallet, GraduationCap } from 'lucide-react';
+import EducationHeader from '../fedu/EducationHeader';
+import TopicCard from '../fedu/TopicCard';
+import QuoteSection from '../fedu/QuoteSection';
 
 const educationalTopics = [
   {
@@ -44,55 +42,7 @@ const educationalTopics = [
 const FinanceEducation: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="mr-4 flex items-center">
-            <Link to="/" className="flex items-center">
-              <Wallet className="h-6 w-6 mr-2" />
-              <span className="font-bold">Financial Planner</span>
-            </Link>
-          </div>
-          <nav className="hidden md:flex flex-1 items-center justify-end space-x-4">
-            <Link to="/features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-              Features
-            </Link>
-            <Link to="/finance-education" className="text-sm font-medium text-primary">
-              Education
-            </Link>
-            <a href="https://tax-compute.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-              Tax Planning
-            </a>
-            <ThemeToggle />
-            <Button asChild>
-              <Link to="/dashboard">Get Started</Link>
-            </Button>
-          </nav>
-          <div className="md:hidden flex flex-1 items-center justify-end">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <div className="flex flex-col gap-4 p-4">
-                  <Link to="/features" className="text-lg font-medium">Features</Link>
-                  <Link to="/finance-education" className="text-lg font-medium text-primary">Education</Link>
-                  <a href="https://tax-compute.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-lg font-medium">Tax Planning</a>
-                  <hr/>
-                  <div className="flex justify-between items-center">
-                    <span>Switch Theme</span>
-                    <ThemeToggle />
-                  </div>
-                  <Button asChild className="w-full">
-                    <Link to="/dashboard">Get Started</Link>
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
+      <EducationHeader />
 
       <main className="flex-1">
         <section className="container py-12 md:py-24">
@@ -105,24 +55,16 @@ const FinanceEducation: React.FC = () => {
 
           <div className="mx-auto mt-12 grid gap-6 sm:grid-cols-2 md:max-w-[64rem] lg:grid-cols-3">
             {educationalTopics.map((topic, index) => (
-              <Card key={index} className="flex flex-col">
-                <CardHeader>
-                  <div className="mb-2">{topic.icon}</div>
-                  <CardTitle className="text-xl">{topic.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <CardDescription className="text-sm leading-relaxed text-muted-foreground">
-                    {topic.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              <TopicCard 
+                key={index}
+                icon={topic.icon}
+                title={topic.title}
+                description={topic.description}
+              />
             ))}
           </div>
 
-          <div className="mt-16 bg-muted/50 rounded-2xl p-8 text-center max-w-[64rem] mx-auto">
-            <h2 className="text-2xl font-bold mb-4 italic">"An investment in knowledge pays the best interest."</h2>
-            <p className="text-muted-foreground">— Benjamin Franklin</p>
-          </div>
+          <QuoteSection />
         </section>
       </main>
 

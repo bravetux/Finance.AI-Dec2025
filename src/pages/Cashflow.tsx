@@ -351,7 +351,7 @@ const Cashflow: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rentalProperty3">Rental Income (Property 3):</Label>
+                  <Label htmlFor="rentalProperty3">Rental Monthly Income (Property 3):</Label>
                   <Input
                     id="rentalProperty3"
                     type="number"

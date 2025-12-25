@@ -1,56 +1,46 @@
 "use client";
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { TrendingUp, ArrowRightLeft, Wallet, Landmark, GraduationCap } from 'lucide-react';
-import TopicCard from '../fedu/TopicCard';
-import QuoteSection from '../fedu/QuoteSection';
+import { Routes, Route } from 'react-router-dom';
+import FinanceSidebar from '@/components/FinanceSidebar';
+import SIPPage from '@/fedu/SIPPage';
+import SWPPage from '@/fedu/SWPPage';
+import STPPage from '@/fedu/STPPage';
+
+// Placeholder components for other sections
+const PlaceholderContent: React.FC<{ title: string }> = ({ title }) => (
+  <div className="p-8">
+    <h2 className="text-3xl font-bold mb-4">{title}</h2>
+    <p className="text-lg text-muted-foreground">Content coming soon for {title}.</p>
+  </div>
+);
 
 const MoneyMindsPage: React.FC = () => {
   return (
-    <div className="container py-12">
-      <div className="flex flex-col items-center text-center mb-16">
-        <GraduationCap className="h-16 w-16 text-primary mb-4" />
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
-          Money Minds Education
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-[42rem]">
-          Master the fundamentals of Indian mutual funds and debt instruments through our visual guides.
-        </p>
-      </div>
+    <div className="container flex min-h-[calc(100vh-3.5rem)]">
+      {/* Sidebar */}
+      <aside className="w-64 border-r pt-8 hidden lg:block">
+        <FinanceSidebar />
+      </aside>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        <Link to="/finance-education/sip">
-          <TopicCard
-            icon={<TrendingUp className="h-10 w-10 text-green-500" />}
-            title="Systematic Investment Plan (SIP)"
-            description="Learn how to build wealth through regular, disciplined investing and the power of compounding."
-          />
-        </Link>
-        <Link to="/finance-education/stp">
-          <TopicCard
-            icon={<ArrowRightLeft className="h-10 w-10 text-orange-500" />}
-            title="Systematic Transfer Plan (STP)"
-            description="Understand how to move lump sums into equity gradually while keeping your money productive."
-          />
-        </Link>
-        <Link to="/finance-education/swp">
-          <TopicCard
-            icon={<Wallet className="h-10 w-10 text-red-500" />}
-            title="Systematic Withdrawal Plan (SWP)"
-            description="Discover how to create a regular income stream from your accumulated corpus efficiently."
-          />
-        </Link>
-        <Link to="/finance-education/bonds">
-          <TopicCard
-            icon={<Landmark className="h-10 w-10 text-blue-500" />}
-            title="Investing in Bonds"
-            description="A guide to safe, fixed-income investing with G-Secs, Corporate Bonds, and Sovereign Gold Bonds."
-          />
-        </Link>
-      </div>
-
-      <QuoteSection />
+      {/* Main Content Area */}
+      <main className="flex-1">
+        <Routes>
+          <Route path="sip" element={<SIPPage />} />
+          <Route path="swp" element={<SWPPage />} />
+          <Route path="stp" element={<STPPage />} />
+          
+          {/* Default/Placeholder Routes */}
+          <Route path="mutual-funds" element={<PlaceholderContent title="Mutual Funds Overview" />} />
+          <Route path="bonds" element={<PlaceholderContent title="Bonds & Fixed Income" />} />
+          <Route path="equity" element={<PlaceholderContent title="Equity & Stocks" />} />
+          <Route path="gold" element={<PlaceholderContent title="Gold & Commodities" />} />
+          <Route path="pms" element={<PlaceholderContent title="PMS" />} />
+          <Route path="sif" element={<PlaceholderContent title="SIF" />} />
+          <Route path="aif" element={<PlaceholderContent title="AIF" />} />
+          <Route path="/" element={<PlaceholderContent title="Welcome to Money Minds Education" />} />
+        </Routes>
+      </main>
     </div>
   );
 };

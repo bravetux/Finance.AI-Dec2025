@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Edit3 } from "lucide-react";
+import { Edit3, ShieldAlert, Trash2, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type AIProvider = "openai" | "google" | "openrouter" | "ollama" | "perplexity";
 
@@ -43,17 +44,31 @@ export const AISettings: React.FC<AISettingsProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Provider Select */}
         <div>
-          <Label htmlFor="providerSelect">AI Provider</Label>
+          <Label htmlFor="providerSelect" className="flex items-center gap-2">
+            AI Provider
+            {provider !== 'ollama' && (
+               <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <ShieldAlert className="h-3 w-3 text-amber-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs text-[10px]">Cloud providers require sensitive API keys which are risky to store in a browser. Use Ollama for 100% privacy.</p>
+                    </TooltipContent>
+                  </Tooltip>
+               </TooltipProvider>
+            )}
+          </Label>
           <Select onValueChange={setProvider} value={provider}>
             <SelectTrigger id="providerSelect">
               <SelectValue placeholder="Select a provider..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="ollama">Ollama (Privacy First - Recommended)</SelectItem>
               <SelectItem value="openai">OpenAI / Other</SelectItem>
               <SelectItem value="google">Google</SelectItem>
               <SelectItem value="openrouter">Open Router</SelectItem>
               <SelectItem value="perplexity">Perplexity</SelectItem>
-              <SelectItem value="ollama">Ollama (Local)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -107,11 +122,29 @@ export const AISettings: React.FC<AISettingsProps> = ({
           <div>
             <Label htmlFor="ollamaUrl">Ollama URL</Label>
             <Input id="ollamaUrl" placeholder="http://localhost:11434" value={ollamaUrl} onChange={(e) => setOllamaUrl(e.target.value)} />
+            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+              <Info className="h-3 w-3" /> No data leaves your machine with local providers.
+            </p>
           </div>
         ) : (
-          <div>
-            <Label htmlFor="apiKey">API Key</Label>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="apiKey">API Key</Label>
+              {apiKey && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setApiKey("")}
+                  className="h-6 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10 px-2"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" /> Wipe Key from Memory
+                </Button>
+              )}
+            </div>
             <Input id="apiKey" type="password" placeholder="Enter your API key here" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+            <p className="text-[10px] text-destructive font-semibold flex items-center gap-1">
+                <ShieldAlert className="h-3 w-3" /> WARNING: Paste at your own risk. Browser storage is vulnerable to theft.
+            </p>
           </div>
         )}
 

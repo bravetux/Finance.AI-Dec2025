@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bot } from "lucide-react";
+import { Bot, ShieldAlert } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
 import { saveAs } from "file-saver";
 import jsPDF from 'jspdf';
@@ -32,8 +32,9 @@ const modelsByProvider: Record<AIProvider, string[]> = {
 };
 
 const AIPrompt: React.FC = () => {
-  const [provider, setProvider] = useLocalStorage<AIProvider>("ai-provider", "openai");
-  const [modelName, setModelName] = useLocalStorage<string>("ai-modelName", modelsByProvider.openai[0]);
+  // Changed default to ollama for privacy-first approach
+  const [provider, setProvider] = useLocalStorage<AIProvider>("ai-provider", "ollama");
+  const [modelName, setModelName] = useLocalStorage<string>("ai-modelName", modelsByProvider.ollama[0]);
   const [ollamaUrl, setOllamaUrl] = useLocalStorage<string>("ai-ollamaUrl", "http://localhost:11434");
   const [prompt, setPrompt] = useLocalStorage<string>("ai-prompt", "");
   const [responseFormat, setResponseFormat] = useLocalStorage<'text' | 'html' | 'pdf'>("ai-responseFormat", 'html');
@@ -325,8 +326,12 @@ const AIPrompt: React.FC = () => {
             ollamaUrl={ollamaUrl} setOllamaUrl={setOllamaUrl}
             responseFormat={responseFormat} setResponseFormat={setResponseFormat}
           />
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3 text-xs text-amber-800 dark:text-amber-200">
-            <strong>Security Note:</strong> API keys are now stored in <em>sessionStorage</em>. They will be automatically cleared when you close this tab. They are excluded from settings exports.
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md p-4 flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-800 dark:text-red-200 space-y-1">
+                <p className="font-bold uppercase tracking-wide">High Security Warning</p>
+                <p>Pasting private API keys into a web browser is <strong>highly risky</strong>. Malicious extensions or system malware can steal these secrets, leading to financial loss. We store keys in <em>sessionStorage</em> for basic safety, but recommend using a local LLM like <strong>Ollama</strong> for 100% privacy.</p>
+            </div>
           </div>
           <ContextManagement
             handleUseMyData={handleUseMyData}

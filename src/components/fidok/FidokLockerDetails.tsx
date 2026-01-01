@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Eye, EyeOff } from "lucide-react";
+import { useFidok } from "../../context/FidokContext";
+import { encryptData, decryptData } from "@/utils/cryptoUtils";
 
 interface Locker {
   id: string;
@@ -19,18 +21,45 @@ interface Locker {
 }
 
 export const FidokLockerDetails: React.FC = () => {
-  const [lockers, setLockers] = useState<Locker[]>(() => {
-    try {
-      const saved = localStorage.getItem('fidokLockerDetails');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { masterPassword } = useFidok();
+  const [lockers, setLockers] = useState<Locker[]>([]);
+  const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('fidokLockerDetails', JSON.stringify(lockers));
-  }, [lockers]);
+    const loadData = async () => {
+      if (!masterPassword) return;
+      try {
+        const saved = localStorage.getItem('fidokLockerDetails');
+        if (saved) {
+          if (saved.startsWith('[')) {
+            setLockers(JSON.parse(saved));
+          } else {
+            const decrypted = await decryptData(saved, masterPassword);
+            setLockers(JSON.parse(decrypted));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load encrypted lockers", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadData();
+  }, [masterPassword]);
+
+  useEffect(() => {
+    const saveData = async () => {
+      if (!masterPassword || !isLoaded) return;
+      try {
+        const encrypted = await encryptData(JSON.stringify(lockers), masterPassword);
+        localStorage.setItem('fidokLockerDetails', encrypted);
+      } catch (e) {
+        console.error("Failed to save encrypted lockers", e);
+      }
+    };
+    saveData();
+  }, [lockers, masterPassword, isLoaded]);
 
   const handleAddRow = () => {
     setLockers(prev => [...prev, { id: Date.now().toString(), bankName: '', accountNumber: '', lockerNumber: '', inNameOf: '', code: '', nominee: '', remarks: '' }]);
@@ -42,6 +71,10 @@ export const FidokLockerDetails: React.FC = () => {
 
   const handleChange = (id: string, field: keyof Locker, value: string) => {
     setLockers(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const toggleVisibility = (id: string) => {
+    setShowCodes(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -59,7 +92,7 @@ export const FidokLockerDetails: React.FC = () => {
                 <TableHead>Bank Account Number</TableHead>
                 <TableHead>Locker No.</TableHead>
                 <TableHead>In the Name of</TableHead>
-                <TableHead>Code/Remarks</TableHead>
+                <TableHead>Code/Keys Secret</TableHead>
                 <TableHead>Nominee</TableHead>
                 <TableHead>Remarks</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -72,7 +105,24 @@ export const FidokLockerDetails: React.FC = () => {
                   <TableCell className="p-1"><Input value={locker.accountNumber} onChange={e => handleChange(locker.id, 'accountNumber', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={locker.lockerNumber} onChange={e => handleChange(locker.id, 'lockerNumber', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={locker.inNameOf} onChange={e => handleChange(locker.id, 'inNameOf', e.target.value)} /></TableCell>
-                  <TableCell className="p-1"><Input value={locker.code} onChange={e => handleChange(locker.id, 'code', e.target.value)} /></TableCell>
+                  <TableCell className="p-1">
+                    <div className="relative">
+                        <Input 
+                            type={showCodes[locker.id] ? "text" : "password"} 
+                            value={locker.code} 
+                            onChange={e => handleChange(locker.id, 'code', e.target.value)} 
+                            className="pr-10"
+                        />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute right-0 top-0 h-full px-2 py-1 text-muted-foreground"
+                            onClick={() => toggleVisibility(locker.id)}
+                        >
+                            {showCodes[locker.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                  </TableCell>
                   <TableCell className="p-1"><Input value={locker.nominee} onChange={e => handleChange(locker.id, 'nominee', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={locker.remarks} onChange={e => handleChange(locker.id, 'remarks', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Button variant="ghost" size="icon" onClick={() => handleDeleteRow(locker.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button></TableCell>

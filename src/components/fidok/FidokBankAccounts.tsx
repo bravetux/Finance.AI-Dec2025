@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Eye, EyeOff } from "lucide-react";
+import { useFidok } from "../../context/FidokContext";
+import { encryptData, decryptData } from "@/utils/cryptoUtils";
 
 interface BankAccount {
   id: string;
@@ -19,18 +21,45 @@ interface BankAccount {
 }
 
 export const FidokBankAccounts: React.FC = () => {
-  const [accounts, setAccounts] = useState<BankAccount[]>(() => {
-    try {
-      const saved = localStorage.getItem('fidokBankAccounts');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { masterPassword } = useFidok();
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [showAccNums, setShowAccNums] = useState<Record<string, boolean>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('fidokBankAccounts', JSON.stringify(accounts));
-  }, [accounts]);
+    const loadData = async () => {
+      if (!masterPassword) return;
+      try {
+        const saved = localStorage.getItem('fidokBankAccounts');
+        if (saved) {
+          if (saved.startsWith('[')) {
+            setAccounts(JSON.parse(saved));
+          } else {
+            const decrypted = await decryptData(saved, masterPassword);
+            setAccounts(JSON.parse(decrypted));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load encrypted bank accounts", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadData();
+  }, [masterPassword]);
+
+  useEffect(() => {
+    const saveData = async () => {
+      if (!masterPassword || !isLoaded) return;
+      try {
+        const encrypted = await encryptData(JSON.stringify(accounts), masterPassword);
+        localStorage.setItem('fidokBankAccounts', encrypted);
+      } catch (e) {
+        console.error("Failed to save encrypted bank accounts", e);
+      }
+    };
+    saveData();
+  }, [accounts, masterPassword, isLoaded]);
 
   const handleAddRow = () => {
     setAccounts(prev => [...prev, { id: Date.now().toString(), holderName: '', bankName: '', accountNumber: '', accountType: '', nominees: '', email: '', mobile: '' }]);
@@ -42,6 +71,10 @@ export const FidokBankAccounts: React.FC = () => {
 
   const handleChange = (id: string, field: keyof BankAccount, value: string) => {
     setAccounts(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const toggleVisibility = (id: string) => {
+    setShowAccNums(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -70,7 +103,24 @@ export const FidokBankAccounts: React.FC = () => {
                 <TableRow key={acc.id}>
                   <TableCell className="p-1"><Input value={acc.holderName} onChange={e => handleChange(acc.id, 'holderName', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={acc.bankName} onChange={e => handleChange(acc.id, 'bankName', e.target.value)} /></TableCell>
-                  <TableCell className="p-1"><Input value={acc.accountNumber} onChange={e => handleChange(acc.id, 'accountNumber', e.target.value)} /></TableCell>
+                  <TableCell className="p-1">
+                    <div className="relative">
+                        <Input 
+                            type={showAccNums[acc.id] ? "text" : "password"} 
+                            value={acc.accountNumber} 
+                            onChange={e => handleChange(acc.id, 'accountNumber', e.target.value)} 
+                            className="pr-10"
+                        />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute right-0 top-0 h-full px-2 py-1 text-muted-foreground"
+                            onClick={() => toggleVisibility(acc.id)}
+                        >
+                            {showAccNums[acc.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                  </TableCell>
                   <TableCell className="p-1"><Input value={acc.accountType} onChange={e => handleChange(acc.id, 'accountType', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={acc.nominees} onChange={e => handleChange(acc.id, 'nominees', e.target.value)} /></TableCell>
                   <TableCell className="p-1"><Input value={acc.email} onChange={e => handleChange(acc.id, 'email', e.target.value)} /></TableCell>

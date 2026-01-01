@@ -1,19 +1,20 @@
-# Tech Stack
+# Tech Stack & Development Rules
 
-- You are building a React application.
-- Use TypeScript.
-- Use React Router. KEEP the routes in src/App.tsx
-- Always put source code in the src folder.
-- Put pages into src/pages/
-- Put components into src/components/
-- The main page (default page) is src/pages/Index.tsx
-- UPDATE the main page to include the new components. OTHERWISE, the user can NOT see any components!
-- ALWAYS try to use the shadcn/ui library.
-- Tailwind CSS: always use Tailwind CSS for styling components. Utilize Tailwind classes extensively for layout, spacing, colors, and other design aspects.
+- **Framework**: React with TypeScript.
+- **Routing**: React Router (Routes are maintained in `src/App.tsx`).
+- **Styling**: Tailwind CSS.
+- **UI Components**: shadcn/ui (Radix UI primitives).
+- **Icons**: lucide-react.
 
-Available packages and libraries:
+## Project Structure
+- `src/pages/`: Main page components.
+- `src/components/`: Reusable UI components.
+- `src/utils/`: Utility functions and logic.
+- `src/hooks/`: Custom React hooks.
 
-- The lucide-react package is installed for icons.
-- You ALREADY have ALL the shadcn/ui components and their dependencies installed. So you don't need to install them again.
-- You have ALL the necessary Radix UI components installed.
-- Use prebuilt components from the shadcn/ui library after importing them. Note that these files shouldn't be edited, so make new components if you need to change them.
+## Guidelines
+- **Privacy First**: All data must be stored in `localStorage`. No external API calls for user data.
+- **Responsiveness**: Always build with mobile-first or highly responsive layouts.
+- **Maintainability**: Keep components small (aim for < 100 lines) and focused.
+- **shadcn/ui**: Use existing components from `@/components/ui/`. Do not modify files inside the `ui` folder directly; instead, create wrappers or new components in `src/components/` if custom logic is needed.
+- **State Management**: Use React state or `localStorage` via hooks.

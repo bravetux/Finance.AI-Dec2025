@@ -27,7 +27,7 @@ const Landing: React.FC = () => {
               Tax Planning
             </a>
             <a href="https://emerald-owl-zoom.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-              Finance Edu
+              Fin Smart
             </a>
             <ThemeToggle />
             <Button asChild>

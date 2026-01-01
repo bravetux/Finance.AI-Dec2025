@@ -3,6 +3,7 @@
 import React from 'react';
 import { Wallet, Sun, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   return (
@@ -53,9 +54,16 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-8 text-center border-t">
-        <div className="text-slate-500 text-sm">
-          Designed by <a href="#" className="underline text-slate-600 hover:text-slate-900">Bravetux</a>. 
-          The Website Source Code is Published in <a href="#" className="underline text-slate-600 hover:text-slate-900">Github</a>.
+        <div className="flex flex-col gap-4">
+          <div className="text-slate-500 text-sm">
+            Designed by <a href="#" className="underline text-slate-600 hover:text-slate-900">Bravetux</a>. 
+            The Website Source Code is Published in <a href="#" className="underline text-slate-600 hover:text-slate-900">Github</a>.
+          </div>
+          <div className="flex justify-center gap-6 text-sm">
+            <Link to="/ai-rules" className="text-slate-500 hover:text-slate-900 transition-colors">AI Rules</Link>
+            <a href="#" className="text-slate-500 hover:text-slate-900 transition-colors">Privacy Policy</a>
+            <a href="#" className="text-slate-500 hover:text-slate-900 transition-colors">Terms of Service</a>
+          </div>
         </div>
       </footer>
     </div>

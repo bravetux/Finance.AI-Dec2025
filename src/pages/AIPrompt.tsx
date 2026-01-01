@@ -9,6 +9,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { gatherAllData } from "@/utils/dataUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
+import useSessionStorage from "@/hooks/useSessionStorage";
 
 import { AISettings } from "../components/ai-prompt/AISettings";
 import { ContextManagement } from "../components/ai-prompt/ContextManagement";
@@ -32,11 +33,14 @@ const modelsByProvider: Record<AIProvider, string[]> = {
 
 const AIPrompt: React.FC = () => {
   const [provider, setProvider] = useLocalStorage<AIProvider>("ai-provider", "openai");
-  const [apiKey, setApiKey] = useLocalStorage<string>("ai-apiKey", "");
   const [modelName, setModelName] = useLocalStorage<string>("ai-modelName", modelsByProvider.openai[0]);
   const [ollamaUrl, setOllamaUrl] = useLocalStorage<string>("ai-ollamaUrl", "http://localhost:11434");
   const [prompt, setPrompt] = useLocalStorage<string>("ai-prompt", "");
   const [responseFormat, setResponseFormat] = useLocalStorage<'text' | 'html' | 'pdf'>("ai-responseFormat", 'html');
+  
+  // SECURE: Use sessionStorage for sensitive keys so they are cleared when the tab/browser is closed
+  const [apiKey, setApiKey] = useSessionStorage<string>("ai-apiKey", "");
+  
   const [useManualModel, setUseManualModel] = useState(false);
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +48,24 @@ const AIPrompt: React.FC = () => {
   const [uploadedData, setUploadedData] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const isInitialMount = useRef(true);
+
+  // SECURE: Cleanup legacy plaintext keys from localStorage if they exist
+  useEffect(() => {
+    const legacyKey = localStorage.getItem("ai-apiKey");
+    if (legacyKey) {
+      // If we don't have a session key yet, migrate it once then wipe
+      if (!apiKey && legacyKey !== '""') {
+        try {
+          const parsed = JSON.parse(legacyKey);
+          if (parsed) setApiKey(parsed);
+        } catch (e) {
+          setApiKey(legacyKey);
+        }
+      }
+      localStorage.removeItem("ai-apiKey");
+      console.log("Cleanup: Legacy plaintext API key removed from permanent storage.");
+    }
+  }, []);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -113,10 +135,11 @@ const AIPrompt: React.FC = () => {
   };
 
   const handleExportSettings = () => {
-    const settings = { provider, apiKey, modelName, ollamaUrl };
+    // SECURE: Do NOT export the apiKey in the settings JSON
+    const settings = { provider, modelName, ollamaUrl };
     const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
     saveAs(blob, 'ai-provider-settings.json');
-    showSuccess('Settings exported!');
+    showSuccess('Settings exported (API Key excluded for security)!');
     addLog('Exported AI settings.');
   };
 
@@ -131,7 +154,7 @@ const AIPrompt: React.FC = () => {
         const settings = JSON.parse(content);
         if (settings.provider && settings.modelName) {
           setProvider(settings.provider);
-          setApiKey(settings.apiKey || "");
+          // SECURE: We don't import API keys from files
           setModelName(settings.modelName);
           setOllamaUrl(settings.ollamaUrl || "http://localhost:11434");
           showSuccess("Settings imported!");
@@ -295,6 +318,9 @@ const AIPrompt: React.FC = () => {
             ollamaUrl={ollamaUrl} setOllamaUrl={setOllamaUrl}
             responseFormat={responseFormat} setResponseFormat={setResponseFormat}
           />
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3 text-xs text-amber-800 dark:text-amber-200">
+            <strong>Security Note:</strong> API keys are now stored in <em>sessionStorage</em>. They will be automatically cleared when you close this tab. They are excluded from settings exports.
+          </div>
           <ContextManagement
             handleUseMyData={handleUseMyData}
             handleFileImport={handleFileImport}

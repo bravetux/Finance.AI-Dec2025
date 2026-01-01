@@ -126,7 +126,7 @@ const Features: React.FC = () => {
             <a
               href="https://github.com/bravetux"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="font-medium underline underline-offset-4"
             >
               Bravetux
@@ -135,7 +135,7 @@ const Features: React.FC = () => {
             <a
               href="https://github.com/bravetux/Finance.AI"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="font-medium underline underline-offset-4"
             >
               Github

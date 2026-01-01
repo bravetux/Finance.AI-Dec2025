@@ -24,6 +24,32 @@ import { gatherAllData } from "@/utils/dataUtils";
 
 type ReportFormat = "json" | "txt";
 
+// List of all keys storing financial data, calculator state, and encrypted FIDOK data.
+// This list is used for selective clearing during import/reset.
+const FINANCIAL_DATA_KEYS = [
+  // Planning & Core
+  'finance-data', 'netWorthData', 'goalsData', 'expenseTrackerData',
+  // Retirement
+  'retirementData', 'fireCalculatorData', 'canRetireNowData',
+  'projectedCashflowSettings', 'projectedAccumulatedCorpus',
+  'postRetirementStrategyPageSettings', 'future-value-data', 'liquidFutureValueTotal', 'futureValueSummary',
+  // Assets
+  'realEstatePropertyValues', 'realEstateReitValue', 'realEstateRentalProperties',
+  'domesticEquityStocks', 'usEquityData', 'mutualFundAllocationEntries',
+  'mutualFundSIPEntries', 'sipOutflowData', 'smallCaseData',
+  'debtLiquidAssets', 'debtFixedDeposits', 'debtDebtFunds', 'debtGovInvestments',
+  'goldData', 'silverData', 'platinumData', 'diamondData',
+  // Calculators State
+  'advanceTaxCalculatorState', 'carAffordableCalculatorData', 'p2pCalculatorState',
+  'rentVacateCalculatorData', 'goldPrice', 'silverPrice', 'platinumPrice',
+  // FIDOK Data (Encrypted content)
+  'fidokFamilyMembers', 'fidokImportantContacts', 'fidokBankAccounts',
+  'fidokFinancialDocuments', 'fidokLockerDetails', 'fidokOnlinePasswords',
+  'fidokInsurancePolicies', 'fidokCards', 'fidokPropertyDetails',
+  'fidokLiabilityDetails', 'fidokInvestments1', 'fidokInvestments2',
+];
+
+
 const Reports: React.FC = () => {
   const [format, setFormat] = useState<ReportFormat>("json");
 
@@ -87,8 +113,9 @@ const Reports: React.FC = () => {
           throw new Error("Invalid or corrupted data file.");
         }
 
-        // Clear existing data before importing to prevent merge issues
-        localStorage.clear();
+        // SECURITY FIX: Use selective deletion instead of global localStorage.clear()
+        // This preserves security keys like fidok_pwd_hash and theme settings.
+        FINANCIAL_DATA_KEYS.forEach(key => localStorage.removeItem(key));
 
         // Restore data from the imported file
         if (data.cashflow) localStorage.setItem('finance-data', JSON.stringify(data.cashflow));
@@ -102,6 +129,8 @@ const Reports: React.FC = () => {
         if (data.projectedCashflow?.corpus) localStorage.setItem('projectedAccumulatedCorpus', JSON.stringify(data.projectedCashflow.corpus));
         if (data.postRetirementStrategy?.settings) localStorage.setItem('postRetirementStrategyPageSettings', JSON.stringify(data.postRetirementStrategy.settings));
         if (data.futureValueCalculator) localStorage.setItem('future-value-data', JSON.stringify(data.futureValueCalculator));
+        
+        // Assets
         if (data.assets?.realEstate?.properties) localStorage.setItem('realEstatePropertyValues', JSON.stringify(data.assets.realEstate.properties));
         if (data.assets?.realEstate?.rentals) localStorage.setItem('realEstateRentalProperties', JSON.stringify(data.assets.realEstate.rentals));
         if (data.assets?.realEstate?.reit) localStorage.setItem('realEstateReitValue', JSON.stringify(data.assets.realEstate.reit));
@@ -119,6 +148,26 @@ const Reports: React.FC = () => {
         if (data.assets?.preciousMetals?.silver) localStorage.setItem('silverData', JSON.stringify(data.assets.preciousMetals.silver));
         if (data.assets?.preciousMetals?.platinum) localStorage.setItem('platinumData', JSON.stringify(data.assets.preciousMetals.platinum));
         if (data.assets?.preciousMetals?.diamond) localStorage.setItem('diamondData', JSON.stringify(data.assets.preciousMetals.diamond));
+        
+        // Calculators State
+        if (data.calculators?.advanceTax) localStorage.setItem('advanceTaxCalculatorState', JSON.stringify(data.calculators.advanceTax));
+        if (data.calculators?.carAffordable) localStorage.setItem('carAffordableCalculatorData', JSON.stringify(data.calculators.carAffordable));
+        if (data.calculators?.p2pLending) localStorage.setItem('p2pCalculatorState', JSON.stringify(data.calculators.p2pLending));
+        if (data.calculators?.rentVacate) localStorage.setItem('rentVacateCalculatorData', JSON.stringify(data.calculators.rentVacate));
+        if (data.calculators?.goldPrice) localStorage.setItem('goldPrice', JSON.stringify(data.calculators.goldPrice));
+        if (data.calculators?.silverPrice) localStorage.setItem('silverPrice', JSON.stringify(data.calculators.silverPrice));
+        if (data.calculators?.platinumPrice) localStorage.setItem('platinumPrice', JSON.stringify(data.calculators.platinumPrice));
+
+        // FIDOK Data (Raw encrypted strings)
+        if (data.fidok) {
+          Object.entries(data.fidok).forEach(([key, value]) => {
+            // Convert camelCase key back to localStorage key format (e.g., familyMembers -> fidokFamilyMembers)
+            const storageKey = `fidok${key.charAt(0).toUpperCase() + key.slice(1)}`;
+            if (value !== null) {
+              localStorage.setItem(storageKey, value as string);
+            }
+          });
+        }
 
         showSuccess("Data imported successfully! The application will now reload.");
         setTimeout(() => window.location.reload(), 1500);
@@ -131,41 +180,11 @@ const Reports: React.FC = () => {
   };
 
   const handleReset = () => {
-    const keysToClear = [
-      // Planning
-      'finance-data',
-      'netWorthData',
-      'goalsData',
-      'expenseTrackerData',
-      // Retirement
-      'retirementData',
-      'fireCalculatorData',
-      'canRetireNowData',
-      'projectedCashflowSettings',
-      'projectedAccumulatedCorpus',
-      'postRetirementStrategyPageSettings',
-      'future-value-data',
-      // Assets
-      'realEstatePropertyValues',
-      'realEstateReitValue',
-      'realEstateRentalProperties',
-      'domesticEquityStocks',
-      'usEquityData',
-      'mutualFundAllocationEntries',
-      'mutualFundSIPEntries',
-      'sipOutflowData',
-      'smallCaseData',
-      'debtLiquidAssets',
-      'debtFixedDeposits',
-      'debtDebtFunds',
-      'debtGovInvestments',
-      'goldData',
-      'silverData',
-      'platinumData',
-      'diamondData',
-    ];
-
-    keysToClear.forEach(key => localStorage.removeItem(key));
+    // Use the comprehensive list of keys for a full reset
+    FINANCIAL_DATA_KEYS.forEach(key => localStorage.removeItem(key));
+    
+    // Explicitly remove the FIDOK password hash as this is a full reset
+    localStorage.removeItem('fidok_pwd_hash');
 
     showSuccess("All application data has been reset to default values.");
 
@@ -175,6 +194,7 @@ const Reports: React.FC = () => {
   };
 
   const handleClearLocalStorage = () => {
+    // This is the dangerous option, kept for user control
     localStorage.clear();
     showSuccess("All application data has been cleared from local storage.");
     setTimeout(() => {

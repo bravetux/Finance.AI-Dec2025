@@ -32,6 +32,7 @@ export const ResponseCard: React.FC<ResponseCardProps> = ({
               srcDoc={response}
               className="w-full h-96 border rounded-md"
               title="AI HTML Response"
+              sandbox="allow-scripts"
             />
           ) : (
             <div className="prose dark:prose-invert max-w-full whitespace-pre-wrap"><p>{response}</p></div>

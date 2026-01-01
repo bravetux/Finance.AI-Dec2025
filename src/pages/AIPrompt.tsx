@@ -180,8 +180,15 @@ const AIPrompt: React.FC = () => {
   const handleSaveAsPdf = async () => {
     if (!response || !response.includes('<html')) { showError("Response is not a valid HTML report for PDF conversion."); return; }
     addLog("Generating PDF...");
+    
+    // SECURE: Sanitize HTML by stripping scripts before rendering for PDF
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response, 'text/html');
+    doc.querySelectorAll('script').forEach(s => s.remove());
+    const sanitizedHtml = doc.documentElement.innerHTML;
+
     const reportElement = document.createElement('div');
-    reportElement.innerHTML = response;
+    reportElement.innerHTML = sanitizedHtml;
     reportElement.style.position = 'absolute';
     reportElement.style.left = '-9999px';
     reportElement.style.width = '210mm';

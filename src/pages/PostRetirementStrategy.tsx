@@ -101,6 +101,32 @@ const PostRetirementStrategy: React.FC = () => {
     return calculatedFutureExpense * (settings.withdrawalAdjustment / 100);
   }, [calculatedFutureExpense, settings.withdrawalAdjustment]);
 
+  const fixedIncomeDetails = useMemo(() => {
+    const fixedAssets: Array<keyof PostRetirementSettings["allocations"]> = ['fds', 'bonds', 'cash'];
+    
+    let annualFixedIncome = 0;
+    let totalFixedAllocation = 0;
+
+    if (initialCorpus > 0) {
+        fixedAssets.forEach(asset => {
+            const allocation = settings.allocations[asset];
+            const returnRate = settings.returns[asset];
+            
+            const allocatedValue = initialCorpus * (allocation / 100);
+            annualFixedIncome += allocatedValue * (returnRate / 100);
+            totalFixedAllocation += allocation;
+        });
+    }
+
+    const monthlyFixedIncome = annualFixedIncome / 12;
+
+    return {
+        annual: annualFixedIncome,
+        monthly: monthlyFixedIncome,
+        totalAllocation: totalFixedAllocation
+    };
+  }, [initialCorpus, settings.allocations, settings.returns]);
+
   const simulation = useMemo(() => {
     if (initialCorpus <= 0 || adjustedInitialWithdrawal <= 0 || totalAllocation !== 100) {
       return { projections: [], yearsLasted: 0, finalCorpus: initialCorpus };
@@ -177,6 +203,26 @@ const PostRetirementStrategy: React.FC = () => {
             <div className="flex flex-col items-center justify-center space-y-8">
               <AllocationPieChart data={settings.allocations} />
               
+              {/* Fixed Income Summary */}
+              <div className="w-full max-w-sm space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                <h3 className="text-lg font-semibold flex items-center justify-between">
+                    Fixed Income Generation
+                    <Banknote className="h-5 w-5 text-green-600" />
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Total Fixed Allocation (FDs, Bonds, Cash): <span className="font-bold">{fixedIncomeDetails.totalAllocation}%</span>
+                </p>
+                <div className="pt-2">
+                    <p className="text-xl font-bold text-green-700">
+                        {formatCurrency(fixedIncomeDetails.monthly)} / Month
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Annual Income: {formatCurrency(fixedIncomeDetails.annual)}
+                    </p>
+                </div>
+              </div>
+              {/* End Fixed Income Summary */}
+
               <div className="w-full max-w-sm space-y-6 pt-6 border-t">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">

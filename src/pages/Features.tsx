@@ -59,6 +59,9 @@ const Features: React.FC = () => {
             <a href="https://tax-compute.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
               Tax Planning
             </a>
+            <a href="https://emerald-owl-zoom.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+              Fin Smart
+            </a>
             <ThemeToggle />
             <Button asChild>
               <Link to="/dashboard">Get Started</Link>

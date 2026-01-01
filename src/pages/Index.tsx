@@ -1,100 +1,187 @@
 "use client";
 
 import React from 'react';
+import { 
+  ArrowRight, 
+  Calculator, 
+  PieChart, 
+  ShieldCheck, 
+  TrendingUp, 
+  DollarSign, 
+  ExternalLink 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, BookOpen, Calculator, TrendingUp, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const IndexPage: React.FC = () => {
+const Index = () => {
   return (
-    <div className="container py-12">
-      <h1 className="text-4xl font-extrabold mb-4 text-primary font-heading">Welcome to Your Financial Dashboard</h1>
-      <p className="text-xl text-muted-foreground mb-8 max-w-3xl">
-        Manage your investments, track your goals, and learn about smart financial strategies.
-      </p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Hero Section */}
+      <header className="bg-white border-b">
+        <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-8 h-8 text-blue-600" />
+            <span className="text-xl font-bold text-slate-900">TaxWise</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-slate-600 hover:text-blue-600 transition-colors">Features</a>
+            <a href="#services" className="text-slate-600 hover:text-blue-600 transition-colors">Services</a>
+            <Button variant="outline" className="mr-2">Log In</Button>
+            <Button>Get Started</Button>
+          </div>
+        </nav>
+      </header>
 
-      <div className="grid md:grid-cols-2 gap-8 mb-12">
-        <Card className="hover:shadow-lg transition-shadow border-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-6 h-6 text-blue-500" />
-              Investment Tools
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Use our calculators to plan your SIPs, SWPs, and retirement goals.
+      <main>
+        {/* Hero Content */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center max-w-3xl">
+            <h1 className="text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
+              Smarter Tax Planning for a <span className="text-blue-600">Secure Future</span>
+            </h1>
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed">
+              Optimize your finances with our advanced tax strategies. We help individuals and businesses minimize liabilities and maximize growth.
             </p>
-            <Link to="/tools">
-              <Button variant="outline" className="w-full group">
-                Go to Tools <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="px-8">
+                Start Your Plan <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-            </Link>
-          </CardContent>
-        </Card>
+              <Button size="lg" variant="outline" className="px-8">
+                View Pricing
+              </Button>
+            </div>
+          </div>
+        </section>
 
-        <Card className="hover:shadow-lg transition-shadow border-2 border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-primary" />
-              Finance Education (FinSmart)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Learn about mutual funds, bonds, SWP, and smart investment strategies on our dedicated platform.
-            </p>
-            <a href="https://emerald-owl-zoom.vercel.app/" target="_blank" rel="noopener noreferrer">
-              <Button className="w-full group">
-                Visit FinSmart <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </a>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Features Section */}
+        <section id="features" className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-16">Why Choose TaxWise?</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: <Calculator className="w-10 h-10 text-blue-600" />,
+                  title: "Precision Math",
+                  description: "Our algorithms ensure every penny is accounted for with 100% accuracy."
+                },
+                {
+                  icon: <ShieldCheck className="w-10 h-10 text-blue-600" />,
+                  title: "Compliant & Secure",
+                  description: "Stay ahead of changing regulations with our constantly updated platform."
+                },
+                {
+                  icon: <TrendingUp className="w-10 h-10 text-blue-600" />,
+                  title: "Growth Focused",
+                  description: "We don't just save you money; we help you find ways to reinvest it wisely."
+                }
+              ].map((feature, idx) => (
+                <Card key={idx} className="border-none shadow-lg bg-slate-50">
+                  <CardHeader>
+                    <div className="mb-4">{feature.icon}</div>
+                    <CardTitle>{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-600">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <Card className="hover:shadow-lg transition-shadow border-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-green-500" />
-              Investment Strategies
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Explore different investment approaches and strategies for wealth creation.
-            </p>
-            <Link to="/strategies">
-              <Button variant="outline" className="w-full group">
-                Learn Strategies <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Services Section */}
+        <section id="services" className="py-20">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-16">Our Specialized Services</h2>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Tax Planning Card */}
+              <Card className="hover:shadow-xl transition-shadow border-2 border-blue-50">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-2xl mb-2 flex items-center gap-2">
+                        <PieChart className="w-6 h-6 text-blue-600" />
+                        Tax Planning
+                      </CardTitle>
+                      <CardDescription>Strategic advice for long-term savings</CardDescription>
+                    </div>
+                    {/* FinSmart Link Button */}
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                      asChild
+                    >
+                      <a href="https://emerald-owl-zoom.vercel.app/" target="_blank" rel="noopener noreferrer">
+                        FinSmart <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-slate-600">
+                    <li className="flex items-center gap-2">• Retirement account optimization</li>
+                    <li className="flex items-center gap-2">• Investment tax strategies</li>
+                    <li className="flex items-center gap-2">• Estate planning coordination</li>
+                  </ul>
+                </CardContent>
+              </Card>
 
-        <Card className="hover:shadow-lg transition-shadow border-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-6 h-6 text-orange-500" />
-              Risk Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Understand how to protect your capital and manage risk in your portfolio.
+              {/* Business Services Card */}
+              <Card className="hover:shadow-xl transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-2xl mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-blue-600" />
+                    Business Tax
+                  </CardTitle>
+                  <CardDescription>Corporate solutions for modern companies</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-slate-600">
+                    <li className="flex items-center gap-2">• Payroll tax management</li>
+                    <li className="flex items-center gap-2">• R&D tax credit filing</li>
+                    <li className="flex items-center gap-2">• Multi-state compliance</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 bg-blue-600 text-white">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-6">Ready to optimize your taxes?</h2>
+            <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+              Join thousands of satisfied clients who have transformed their financial future with TaxWise.
             </p>
-            <Link to="/risk">
-              <Button variant="outline" className="w-full group">
-                Manage Risk <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+            <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
+              Get Started for Free
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="bg-slate-900 text-slate-400 py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-2 text-white">
+              <DollarSign className="w-6 h-6 text-blue-400" />
+              <span className="text-lg font-bold">TaxWise</span>
+            </div>
+            <div className="flex gap-8">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="#" className="hover:text-white transition-colors">Contact</a>
+            </div>
+            <div className="text-sm">
+              © {new Date().getFullYear()} TaxWise Inc. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
-export default IndexPage;
+export default Index;

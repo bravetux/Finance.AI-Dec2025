@@ -2,13 +2,14 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark } from "lucide-react";
+import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark, ShieldCheck } from "lucide-react";
 import {
   getLiquidFutureValueTotal,
   getFinanceData,
   getNetWorthData,
   getFutureValueSummaryData,
   getGoalsData,
+  getInsuranceSummary,
   safeParseJSON, // Import safeParseJSON for specific cases
 } from "@/utils/localStorageUtils";
 
@@ -18,6 +19,7 @@ const Dashboard: React.FC = () => {
   const [netWorthData, setNetWorthData] = React.useState({ totalAssets: 0, totalLiabilities: 0 });
   const [futureValueData, setFutureValueData] = React.useState({ totalFutureValue: 0, averageROI: 0, ageAtGoal: 0, duration: 0 });
   const [goalsData, setGoalsData] = React.useState({ totalGoalsFutureValue: 0, totalSipRequired: 0 });
+  const [insuranceData, setInsuranceData] = React.useState({ termPremium: 0, termCoverage: 0, healthPremium: 0, healthCoverage: 0 });
 
   React.useEffect(() => {
     const updateAllValues = () => {
@@ -49,6 +51,9 @@ const Dashboard: React.FC = () => {
         const totalGoalsFv = goals.reduce((sum: number, goal: any) => sum + (goal.targetFutureValue || 0), 0);
         const totalSip = goals.reduce((sum: number, goal: any) => sum + (goal.sipRequired || 0), 0);
         setGoalsData({ totalGoalsFutureValue: totalGoalsFv, totalSipRequired: totalSip });
+
+        // Insurance Data
+        setInsuranceData(getInsuranceSummary());
 
       } catch (e) {
         console.error("Failed to parse dashboard data from localStorage", e);
@@ -205,6 +210,27 @@ const Dashboard: React.FC = () => {
                 {sipSufficiencyMessage && (<p className={`text-sm font-semibold ${sipSufficiencyColor}`}>{sipSufficiencyMessage}</p>)}
               </div>
             )}
+          </CardContent>
+        </Card>
+        
+        {/* New Insurance Summary Card */}
+        <Card className="border-l-4 border-indigo-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-indigo-500" />Insurance Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between">
+              <span>Term Coverage:</span>
+              <span className="font-medium text-indigo-600">₹{insuranceData.termCoverage.toLocaleString("en-IN")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Health Coverage:</span>
+              <span className="font-medium text-indigo-600">₹{insuranceData.healthCoverage.toLocaleString("en-IN")}</span>
+            </div>
+            <div className="border-t pt-2 space-y-2">
+              <div className="flex justify-between"><span className="font-bold">Annual Term Premium:</span><span className="font-bold text-red-600">₹{insuranceData.termPremium.toLocaleString("en-IN")}</span></div>
+              <div className="flex justify-between"><span className="font-bold">Annual Health Premium:</span><span className="font-bold text-red-600">₹{insuranceData.healthPremium.toLocaleString("en-IN")}</span></div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -45,6 +45,17 @@ interface FinanceData {
   monthlyOthers: number;
 }
 
+interface InsurancePolicy {
+  id: string;
+  policyName: string;
+  insurer: string;
+  policyNumber: string;
+  coverageAmount: number;
+  annualPremium: number;
+  expiryDate: string;
+  type: 'Term' | 'Health' | 'Vehicle' | 'Other';
+}
+
 // Default state objects
 const defaultNetWorthData: NetWorthData = {
   homeValue: 0, otherRealEstate: 0, jewellery: 0, sovereignGoldBonds: 0,
@@ -140,4 +151,24 @@ export const getRetirementData = () => {
     returns: { equity: 12, fds: 7, bonds: 8, cash: 2.5 },
   };
   return safeParseJSON('retirementData', defaultState);
+};
+
+export const getInsuranceSummary = () => {
+  const policies = safeParseJSON<InsurancePolicy[]>('insuranceHubData', []);
+  
+  const summary = policies.reduce(
+    (acc, policy) => {
+      if (policy.type === 'Term') {
+        acc.termPremium += policy.annualPremium;
+        acc.termCoverage += policy.coverageAmount;
+      } else if (policy.type === 'Health') {
+        acc.healthPremium += policy.annualPremium;
+        acc.healthCoverage += policy.coverageAmount;
+      }
+      return acc;
+    },
+    { termPremium: 0, termCoverage: 0, healthPremium: 0, healthCoverage: 0 }
+  );
+
+  return summary;
 };

@@ -84,6 +84,12 @@ export const gatherAllData = () => {
         goldPrice: safeJSONParse('goldPrice', 0),
         silverPrice: safeJSONParse('silverPrice', 0),
         platinumPrice: safeJSONParse('platinumPrice', 0),
+        // New calculator states
+        buyVsRent: safeJSONParse('buyVsRentCalculatorState', {}),
+        childEducationFund: safeJSONParse('childEducationFundCalculatorState', {}),
+        hlv: safeJSONParse('hlvCalculatorState', {}),
+        healthInsurance: safeJSONParse('healthInsuranceCalculatorState', {}),
+        inflationImpact: safeJSONParse('inflationImpactCalculatorState', {}),
       },
 
       // FIDOK Data (Stored as encrypted strings)

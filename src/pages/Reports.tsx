@@ -40,8 +40,9 @@ const FINANCIAL_DATA_KEYS = [
   'debtLiquidAssets', 'debtFixedDeposits', 'debtDebtFunds', 'debtGovInvestments',
   'goldData', 'silverData', 'platinumData', 'diamondData',
   // Calculators State
-  'advanceTaxCalculatorState', 'carAffordableCalculatorData', 'p2pCalculatorState',
+  'advanceTaxCalculatorState', 'carAffordableCalculatorData', 'p2pLendingCalculatorState',
   'rentVacateCalculatorData', 'goldPrice', 'silverPrice', 'platinumPrice',
+  'buyVsRentCalculatorState', 'childEducationFundCalculatorState', 'hlvCalculatorState', 'healthInsuranceCalculatorState', 'inflationImpactCalculatorState',
   // FIDOK Data (Encrypted content)
   'fidokFamilyMembers', 'fidokImportantContacts', 'fidokBankAccounts',
   'fidokFinancialDocuments', 'fidokLockerDetails', 'fidokOnlinePasswords',
@@ -152,11 +153,16 @@ const Reports: React.FC = () => {
         // Calculators State
         if (data.calculators?.advanceTax) localStorage.setItem('advanceTaxCalculatorState', JSON.stringify(data.calculators.advanceTax));
         if (data.calculators?.carAffordable) localStorage.setItem('carAffordableCalculatorData', JSON.stringify(data.calculators.carAffordable));
-        if (data.calculators?.p2pLending) localStorage.setItem('p2pCalculatorState', JSON.stringify(data.calculators.p2pLending));
+        if (data.calculators?.p2pLending) localStorage.setItem('p2pLendingCalculatorState', JSON.stringify(data.calculators.p2pLending));
         if (data.calculators?.rentVacate) localStorage.setItem('rentVacateCalculatorData', JSON.stringify(data.calculators.rentVacate));
         if (data.calculators?.goldPrice) localStorage.setItem('goldPrice', JSON.stringify(data.calculators.goldPrice));
         if (data.calculators?.silverPrice) localStorage.setItem('silverPrice', JSON.stringify(data.calculators.silverPrice));
         if (data.calculators?.platinumPrice) localStorage.setItem('platinumPrice', JSON.stringify(data.calculators.platinumPrice));
+        if (data.calculators?.buyVsRent) localStorage.setItem('buyVsRentCalculatorState', JSON.stringify(data.calculators.buyVsRent));
+        if (data.calculators?.childEducationFund) localStorage.setItem('childEducationFundCalculatorState', JSON.stringify(data.calculators.childEducationFund));
+        if (data.calculators?.hlv) localStorage.setItem('hlvCalculatorState', JSON.stringify(data.calculators.hlv));
+        if (data.calculators?.healthInsurance) localStorage.setItem('healthInsuranceCalculatorState', JSON.stringify(data.calculators.healthInsurance));
+        if (data.calculators?.inflationImpact) localStorage.setItem('inflationImpactCalculatorState', JSON.stringify(data.calculators.inflationImpact));
 
         // FIDOK Data (Raw encrypted strings)
         if (data.fidok) {

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Home, Upload, Download, Trash2, Calculator } from "lucide-react";
+import { Home, Upload, Download, Trash2, Calculator, Clock, TrendingUp } from "lucide-react";
 import { saveAs } from "file-saver";
 import { showSuccess, showError } from "@/utils/toast";
 import {
@@ -28,25 +28,58 @@ interface RentalProperty {
   rent: number;
 }
 
+interface RentalCalculation extends RentalProperty {
+  annualRent: number;
+  yieldPercent: number;
+  futureRent: number;
+  futureYieldPercent: number;
+}
+
 const initialRentalProperties: RentalProperty[] = [
   { id: 'rp1', name: 'Home 1', value: 0, rent: 0 },
   { id: 'rp2', name: 'Commercial 1', value: 0, rent: 0 },
   { id: 'rp3', name: 'Home 2', value: 0, rent: 0 },
 ];
 
+const RENTAL_YIELD_STATE_KEY = 'realEstateRentalProperties';
+const RENTAL_PROJECTION_SETTINGS_KEY = 'rentalProjectionSettings';
+
+const initialProjectionSettings = {
+  yearsToProject: 10,
+  rentalInflationRate: 5,
+  propertyAppreciationRate: 5,
+};
+
 const RentalYieldCalculator: React.FC = () => {
   const [rentalProperties, setRentalProperties] = useState<RentalProperty[]>(() => {
     try {
-      const saved = localStorage.getItem('realEstateRentalProperties');
+      const saved = localStorage.getItem(RENTAL_YIELD_STATE_KEY);
       return saved ? JSON.parse(saved) : initialRentalProperties;
     } catch {
       return initialRentalProperties;
     }
   });
 
+  const [projectionSettings, setProjectionSettings] = useState(initialProjectionSettings);
+
   useEffect(() => {
-    localStorage.setItem('realEstateRentalProperties', JSON.stringify(rentalProperties));
+    localStorage.setItem(RENTAL_YIELD_STATE_KEY, JSON.stringify(rentalProperties));
   }, [rentalProperties]);
+
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem(RENTAL_PROJECTION_SETTINGS_KEY);
+      if (savedSettings) {
+        setProjectionSettings(JSON.parse(savedSettings));
+      }
+    } catch (e) {
+      console.error("Failed to load projection settings", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(RENTAL_PROJECTION_SETTINGS_KEY, JSON.stringify(projectionSettings));
+  }, [projectionSettings]);
 
   const handleRentalPropertyChange = (id: string, field: 'value' | 'rent', value: string) => {
     const numericValue = Number(value.replace(/,/g, ''));
@@ -56,20 +89,43 @@ const RentalYieldCalculator: React.FC = () => {
     );
   };
 
-  const rentalCalculations = useMemo(() => {
+  const handleProjectionSettingChange = (field: keyof typeof initialProjectionSettings, value: string) => {
+    setProjectionSettings(prev => ({ ...prev, [field]: Number(value) || 0 }));
+  };
+
+  const rentalCalculations = useMemo((): RentalCalculation[] => {
+    const { yearsToProject, rentalInflationRate, propertyAppreciationRate } = projectionSettings;
+    
     return rentalProperties.map(p => {
       const annualRent = p.rent * 12;
       const yieldPercent = p.value > 0 ? (annualRent / p.value) * 100 : 0;
-      return { ...p, annualRent, yieldPercent };
+
+      // Future Calculations
+      const futureRent = p.rent * Math.pow(1 + rentalInflationRate / 100, yearsToProject);
+      const futurePropertyValue = p.value * Math.pow(1 + propertyAppreciationRate / 100, yearsToProject);
+      const futureAnnualRent = futureRent * 12;
+      const futureYieldPercent = futurePropertyValue > 0 ? (futureAnnualRent / futurePropertyValue) * 100 : 0;
+
+      return { 
+        ...p, 
+        annualRent, 
+        yieldPercent, 
+        futureRent: Math.round(futureRent),
+        futureYieldPercent,
+      };
     });
-  }, [rentalProperties]);
+  }, [rentalProperties, projectionSettings]);
 
   const formatCurrency = (value: number) => {
     return `₹${value.toLocaleString('en-IN')}`;
   };
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify(rentalProperties, null, 2)], { type: 'application/json' });
+    const dataToExport = {
+      rentalProperties,
+      projectionSettings,
+    };
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
     saveAs(blob, 'rental-yield-data.json');
     showSuccess('Rental yield data exported successfully!');
   };
@@ -82,8 +138,11 @@ const RentalYieldCalculator: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (Array.isArray(data)) {
-          setRentalProperties(data);
+        if (data.rentalProperties) {
+          setRentalProperties(data.rentalProperties);
+          if (data.projectionSettings) {
+            setProjectionSettings(data.projectionSettings);
+          }
           showSuccess('Rental yield data imported successfully!');
         } else {
           showError('Invalid file format.');
@@ -98,6 +157,7 @@ const RentalYieldCalculator: React.FC = () => {
 
   const handleClearData = () => {
     setRentalProperties(initialRentalProperties.map(p => ({ ...p, value: 0, rent: 0 })));
+    setProjectionSettings(initialProjectionSettings);
     showSuccess('Rental yield data has been cleared.');
   };
 
@@ -142,6 +202,42 @@ const RentalYieldCalculator: React.FC = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle>Projection Settings</CardTitle>
+          <CardDescription>Define the time horizon and expected growth rates for future value calculations.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="yearsToProject" className="flex items-center gap-2"><Clock className="h-4 w-4" /> Years to Project</Label>
+            <Input
+              id="yearsToProject"
+              type="number"
+              value={projectionSettings.yearsToProject}
+              onChange={e => handleProjectionSettingChange('yearsToProject', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="rentalInflationRate" className="flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Rental Inflation Rate (%)</Label>
+            <Input
+              id="rentalInflationRate"
+              type="number"
+              value={projectionSettings.rentalInflationRate}
+              onChange={e => handleProjectionSettingChange('rentalInflationRate', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="propertyAppreciationRate" className="flex items-center gap-2"><Home className="h-4 w-4" /> Property Appreciation Rate (%)</Label>
+            <Input
+              id="propertyAppreciationRate"
+              type="number"
+              value={projectionSettings.propertyAppreciationRate}
+              onChange={e => handleProjectionSettingChange('propertyAppreciationRate', e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Properties & Yields</CardTitle>
         </CardHeader>
         <CardContent>
@@ -152,8 +248,9 @@ const RentalYieldCalculator: React.FC = () => {
                   <TableHead>Property Name</TableHead>
                   <TableHead>Property Value (INR)</TableHead>
                   <TableHead>Monthly Rent (INR)</TableHead>
-                  <TableHead className="text-right">Annual Rent</TableHead>
-                  <TableHead className="text-right">Gross Yield %</TableHead>
+                  <TableHead className="text-right">Gross Yield % (Today)</TableHead>
+                  <TableHead className="text-right">Future Monthly Rent</TableHead>
+                  <TableHead className="text-right">Future Yield %</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -176,8 +273,9 @@ const RentalYieldCalculator: React.FC = () => {
                         className="w-32"
                       />
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.annualRent)}</TableCell>
                     <TableCell className="text-right font-bold text-primary">{p.yieldPercent.toFixed(2)}%</TableCell>
+                    <TableCell className="text-right text-green-600 font-medium">{formatCurrency(p.futureRent)}</TableCell>
+                    <TableCell className="text-right font-bold text-orange-500">{p.futureYieldPercent.toFixed(2)}%</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

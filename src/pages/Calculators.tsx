@@ -20,7 +20,8 @@ import {
   Percent,
   CreditCard,
   PieChart,
-  DoorOpen
+  DoorOpen,
+  Home
 } from "lucide-react";
 
 const calculatorList = [
@@ -46,6 +47,14 @@ const calculatorList = [
     path: "/dashboard/asset-allocation-calculator",
     icon: PieChart,
     color: "text-orange-500",
+    category: "Investing"
+  },
+  {
+    name: "Rental Yield",
+    description: "Evaluate your real estate investment performance using property value and rental income.",
+    path: "/dashboard/rental-yield-calculator",
+    icon: Home,
+    color: "text-emerald-500",
     category: "Investing"
   },
   {

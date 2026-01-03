@@ -55,6 +55,7 @@ import AssetAllocationCalculator from "./pages/AssetAllocationCalculator";
 import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
 import RentVacateCalculator from "./pages/RentVacateCalculator";
+import RentalYieldCalculator from "./pages/RentalYieldCalculator";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="compound-interest-calculator" element={<CompoundInterestCalculator />} />
               <Route path="expense-reduction-planner" element={<ExpenseReductionPlanner />} />
               <Route path="rent-vacate-calculator" element={<RentVacateCalculator />} />
+              <Route path="rental-yield-calculator" element={<RentalYieldCalculator />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

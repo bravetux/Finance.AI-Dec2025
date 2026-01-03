@@ -34,13 +34,6 @@ interface PropertyValue {
   value: number;
 }
 
-interface RentalProperty {
-  id: string;
-  name: string;
-  value: number;
-  rent: number;
-}
-
 // Initial data now excludes REIT
 const initialPropertyValues: PropertyValue[] = [
   { id: 'pv1', name: 'Home 1', value: 0 },
@@ -48,12 +41,6 @@ const initialPropertyValues: PropertyValue[] = [
   { id: 'pv3', name: 'Commercial 1', value: 0 },
   { id: 'pv4', name: 'Commercial 2', value: 0 },
   { id: 'pv5', name: 'Land', value: 0 },
-];
-
-const initialRentalProperties: RentalProperty[] = [
-  { id: 'rp1', name: 'Home 1', value: 0, rent: 0 },
-  { id: 'rp2', name: 'Commercial 1', value: 0, rent: 0 },
-  { id: 'rp3', name: 'Home 2', value: 0, rent: 0 },
 ];
 
 const RealEstate: React.FC = () => {
@@ -77,16 +64,6 @@ const RealEstate: React.FC = () => {
     }
   });
 
-  // State for rental yield properties
-  const [rentalProperties, setRentalProperties] = useState<RentalProperty[]>(() => {
-    try {
-      const saved = localStorage.getItem('realEstateRentalProperties');
-      return saved ? JSON.parse(saved) : initialRentalProperties;
-    } catch {
-      return initialRentalProperties;
-    }
-  });
-
   // Persist data to localStorage
   useEffect(() => {
     localStorage.setItem('realEstatePropertyValues', JSON.stringify(propertyValues));
@@ -95,10 +72,6 @@ const RealEstate: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('realEstateReitValue', JSON.stringify(reitValue));
   }, [reitValue]);
-
-  useEffect(() => {
-    localStorage.setItem('realEstateRentalProperties', JSON.stringify(rentalProperties));
-  }, [rentalProperties]);
 
   // Update net worth data in localStorage whenever property or REIT values change
   useEffect(() => {
@@ -143,28 +116,10 @@ const RealEstate: React.FC = () => {
     setReitValue(numericValue);
   };
 
-  const handleRentalPropertyChange = (id: string, field: 'value' | 'rent', value: string) => {
-    const numericValue = Number(value.replace(/,/g, ''));
-    if (isNaN(numericValue)) return;
-    if (field === 'value' && numericValue.toString().length > 9) return;
-    if (field === 'rent' && numericValue.toString().length > 7) return;
-    setRentalProperties(prev =>
-      prev.map(p => (p.id === id ? { ...p, [field]: numericValue } : p))
-    );
-  };
-
   // Calculations
   const totalPropertyValue = useMemo(() => {
     return propertyValues.reduce((sum, p) => sum + p.value, 0);
   }, [propertyValues]);
-
-  const rentalCalculations = useMemo(() => {
-    return rentalProperties.map(p => {
-      const annualRent = p.rent * 12;
-      const yieldPercent = p.value > 0 ? (annualRent / p.value) * 100 : 0;
-      return { ...p, annualRent, yieldPercent };
-    });
-  }, [rentalProperties]);
 
   const propertyChartData = useMemo(() => {
     return propertyValues
@@ -194,7 +149,6 @@ const RealEstate: React.FC = () => {
   const exportData = () => {
     const dataToExport = {
       propertyValues,
-      rentalProperties,
       reitValue,
     };
     const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
@@ -210,9 +164,8 @@ const RealEstate: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (data.propertyValues && data.rentalProperties) {
+        if (data.propertyValues) {
           setPropertyValues(data.propertyValues);
-          setRentalProperties(data.rentalProperties);
           if (typeof data.reitValue === 'number') {
             setReitValue(data.reitValue);
           }
@@ -230,7 +183,6 @@ const RealEstate: React.FC = () => {
 
   const handleClearData = () => {
     setPropertyValues(initialPropertyValues.map(p => ({ ...p, value: 0 })));
-    setRentalProperties(initialRentalProperties.map(p => ({ ...p, value: 0, rent: 0 })));
     setReitValue(0);
     showSuccess('Real estate data has been cleared.');
   };
@@ -346,90 +298,6 @@ const RealEstate: React.FC = () => {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Rental Yield Calculator</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Particulars</TableHead>
-                  <TableHead>Value (INR)</TableHead>
-                  <TableHead>Rent</TableHead>
-                  <TableHead className="text-right">Annual Rent</TableHead>
-                  <TableHead className="text-right">Yield %</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rentalCalculations.map(p => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="text"
-                        value={p.value.toLocaleString('en-IN')}
-                        onChange={e => handleRentalPropertyChange(p.id, 'value', e.target.value)}
-                        className="w-36"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="text"
-                        value={p.rent.toLocaleString('en-IN')}
-                        onChange={e => handleRentalPropertyChange(p.id, 'rent', e.target.value)}
-                        className="w-28"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.annualRent)}</TableCell>
-                    <TableCell className="text-right">{p.yieldPercent.toFixed(2)}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>📉 Rental Yield &lt; 6%</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>Low yield territory</strong> — the rental income isn’t compensating you enough for the property’s market value.</p>
-            <p>This usually happens in metro/prime city areas where prices are high but rents haven’t kept pace.</p>
-            <p>Treat the property more as a <strong>capital appreciation play</strong> rather than a pure income generator. You’re banking on long-term price growth.</p>
-            <p>But if capital appreciation is also sluggish, your money is working too slowly — better to consider selling and reallocating to higher-yield or faster-growth assets.</p>
-            <p>Alternative investments (REITs, bonds, dividend stocks) could beat your current yield with less headache.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>✅ Rental Yield ≥ 6%</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>Healthy income zone</strong> — you’re getting decent cash flow relative to property value.</p>
-            <p>Can be a sign of undervalued property or high rental demand (often in tier-2/tier-3 cities or commercial spaces).</p>
-            <p>You can hold and reinvest the rental income, potentially compounding returns.</p>
-            <p>Still, compare with local REIT yields (often 6–8%) — if you’re earning more, you’ve got a solid asset.</p>
-            <p>Factor in maintenance, vacancy, and tax — real net yield after expenses might be 1–2% lower.</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>💡 Golden Rule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg font-medium text-muted-foreground">
-            For long-term investors, a rental yield below 6% needs strong capital growth to justify holding. A yield above 6% can justify holding even without significant price appreciation, as the cash flow itself is robust.
-          </p>
         </CardContent>
       </Card>
     </div>

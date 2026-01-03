@@ -4,7 +4,6 @@ import {
   Settings, 
   TrendingUp, 
   Wallet,
-  History,
   ShieldCheck
 } from "lucide-react";
 import {
@@ -19,13 +18,15 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
 
-// Menu items.
-const items = [
+const mainItems = [
   {
     title: "Retirement Dashboard",
     url: "/",
     icon: LayoutDashboard,
   },
+];
+
+const planningItems = [
   {
     title: "Liquid Assets Calculator",
     url: "/assets",
@@ -46,6 +47,9 @@ const items = [
     url: "/can-i-retire",
     icon: Wallet,
   },
+];
+
+const settingsItems = [
   {
     title: "Settings",
     url: "/settings",
@@ -56,24 +60,40 @@ const items = [
 export function AppSidebar() {
   const location = useLocation();
 
+  const renderMenuItems = (items: typeof mainItems) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+            <Link to={item.url}>
+              <item.icon />
+              <span>{item.title}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
+
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Retirement Planner</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(mainItems)}
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Retirement Planning</SidebarGroupLabel>
+          <SidebarGroupContent>
+            {renderMenuItems(planningItems)}
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            {renderMenuItems(settingsItems)}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

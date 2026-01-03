@@ -48,6 +48,7 @@ import {
   Shield,
   GraduationCap,
   ArrowRightLeft,
+  Receipt,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -179,14 +180,21 @@ const navItems = [
         ]
       },
       { 
-        name: "Interest & Tax", 
+        name: "Taxation", 
+        icon: Receipt,
+        type: 'section',
+        children: [
+          { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
+        ]
+      },
+      { 
+        name: "Interest & General", 
         icon: Percent,
         type: 'section',
         children: [
           { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
           { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Sparkles, type: 'link' },
           { name: "Percentage Calculator", path: "/dashboard/percentage-calculator", icon: Percent, type: 'link' },
-          { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
         ]
       },
       { 

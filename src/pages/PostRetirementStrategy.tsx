@@ -199,25 +199,31 @@ const PostRetirementStrategy: React.FC = () => {
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-  const renderIncomeInput = (label: string, field: keyof PostRetirementSettings, icon: React.ReactNode) => (
-    <div className="space-y-1">
-      <Label htmlFor={field} className="flex items-center gap-2 text-sm font-medium">
-        {icon} {label} (Annual ₹)
-      </Label>
-      <Input 
-        id={field} 
-        type="number" 
-        value={settings[field]} 
-        onChange={e => handleIncomeChange(field, e.target.value)} 
-        className="text-right h-8"
-      />
-    </div>
-  );
+  const renderIncomeInput = (label: string, field: keyof PostRetirementSettings, icon: React.ReactNode) => {
+    // Ensure we only handle numeric fields
+    const value = settings[field];
+    if (typeof value !== 'number') return null;
+
+    return (
+      <div className="space-y-1">
+        <Label htmlFor={field} className="flex items-center gap-2 text-sm font-medium">
+          {icon} {label} (Annual ₹)
+        </Label>
+        <Input
+          id={field}
+          type="number"
+          value={value}
+          onChange={e => handleIncomeChange(field, e.target.value)}
+          className="text-right h-8"
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Post-Retirement Withdrawal Strategy</h1>
-      
+
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -276,7 +282,7 @@ const PostRetirementStrategy: React.FC = () => {
           <CardContent className="grid gap-8 md:grid-cols-2">
             <div className="flex flex-col items-center justify-center space-y-8">
               <AllocationPieChart data={settings.allocations} />
-              
+
               {/* Fixed Income Summary */}
               <div className="w-full max-w-sm space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
                 <h3 className="text-lg font-semibold flex items-center justify-between">
@@ -303,13 +309,13 @@ const PostRetirementStrategy: React.FC = () => {
                     <Label htmlFor="withdrawal-slider" className="font-semibold text-orange-600">Withdrawal Adjustment (%)</Label>
                     <span className="text-lg font-bold text-orange-600">{settings.withdrawalAdjustment}%</span>
                   </div>
-                  <Slider 
+                  <Slider
                     id="withdrawal-slider"
-                    value={[settings.withdrawalAdjustment]} 
-                    onValueChange={(val) => handleSettingsChange("withdrawalAdjustment", val[0])} 
-                    min={50} 
-                    max={200} 
-                    step={5} 
+                    value={[settings.withdrawalAdjustment]}
+                    onValueChange={(val) => handleSettingsChange("withdrawalAdjustment", val[0])}
+                    min={50}
+                    max={200}
+                    step={5}
                   />
                   <p className="text-xs text-muted-foreground">Adjust starting withdrawal relative to projected expenses ({formatCurrency(calculatedFutureExpense)}).</p>
                 </div>
@@ -319,13 +325,13 @@ const PostRetirementStrategy: React.FC = () => {
                     <Label htmlFor="inflation-slider" className="font-semibold">Post-Retirement Inflation (%)</Label>
                     <span className="text-lg font-bold text-blue-600">{settings.inflation}%</span>
                   </div>
-                  <Slider 
+                  <Slider
                     id="inflation-slider"
-                    value={[settings.inflation]} 
-                    onValueChange={(val) => handleSettingsChange("inflation", val[0])} 
-                    min={0} 
-                    max={15} 
-                    step={0.5} 
+                    value={[settings.inflation]}
+                    onValueChange={(val) => handleSettingsChange("inflation", val[0])}
+                    min={0}
+                    max={15}
+                    step={0.5}
                   />
                 </div>
 
@@ -334,13 +340,13 @@ const PostRetirementStrategy: React.FC = () => {
                     <Label htmlFor="life-expectancy-slider" className="font-semibold">Life Expectancy (Age)</Label>
                     <span className="text-lg font-bold text-blue-600">{settings.lifeExpectancy}</span>
                   </div>
-                  <Slider 
+                  <Slider
                     id="life-expectancy-slider"
-                    value={[settings.lifeExpectancy]} 
-                    onValueChange={(val) => handleSettingsChange("lifeExpectancy", val[0])} 
-                    min={70} 
-                    max={100} 
-                    step={1} 
+                    value={[settings.lifeExpectancy]}
+                    onValueChange={(val) => handleSettingsChange("lifeExpectancy", val[0])}
+                    min={70}
+                    max={100}
+                    step={1}
                   />
                 </div>
               </div>

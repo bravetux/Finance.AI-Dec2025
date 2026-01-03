@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Home, Upload, Download, Trash2, Calculator, Clock, TrendingUp } from "lucide-react";
+import { Home, Upload, Download, Trash2, Calculator, Clock, TrendingUp, PlusCircle, FileText } from "lucide-react";
 import { saveAs } from "file-saver";
 import { showSuccess, showError } from "@/utils/toast";
 import {
@@ -60,37 +60,55 @@ const RentalYieldCalculator: React.FC = () => {
     }
   });
 
-  const [projectionSettings, setProjectionSettings] = useState(initialProjectionSettings);
+  const [projectionSettings, setProjectionSettings] = useState(() => {
+    try {
+      const savedSettings = localStorage.getItem(RENTAL_PROJECTION_SETTINGS_KEY);
+      return savedSettings ? JSON.parse(savedSettings) : initialProjectionSettings;
+    } catch (e) {
+      return initialProjectionSettings;
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem(RENTAL_YIELD_STATE_KEY, JSON.stringify(rentalProperties));
   }, [rentalProperties]);
 
   useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem(RENTAL_PROJECTION_SETTINGS_KEY);
-      if (savedSettings) {
-        setProjectionSettings(JSON.parse(savedSettings));
-      }
-    } catch (e) {
-      console.error("Failed to load projection settings", e);
-    }
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem(RENTAL_PROJECTION_SETTINGS_KEY, JSON.stringify(projectionSettings));
   }, [projectionSettings]);
 
-  const handleRentalPropertyChange = (id: string, field: 'value' | 'rent', value: string) => {
-    const numericValue = Number(value.replace(/,/g, ''));
-    if (isNaN(numericValue)) return;
+  const handleRentalPropertyChange = (id: string, field: 'value' | 'rent' | 'name', value: string) => {
     setRentalProperties(prev =>
-      prev.map(p => (p.id === id ? { ...p, [field]: numericValue } : p))
+      prev.map(p => {
+        if (p.id === id) {
+          if (field === 'name') {
+            return { ...p, name: value };
+          }
+          const numericValue = Number(value.replace(/,/g, ''));
+          if (isNaN(numericValue)) return p;
+          return { ...p, [field]: numericValue };
+        }
+        return p;
+      })
     );
   };
 
   const handleProjectionSettingChange = (field: keyof typeof initialProjectionSettings, value: string) => {
     setProjectionSettings(prev => ({ ...prev, [field]: Number(value) || 0 }));
+  };
+
+  const handleAddRow = () => {
+    const newProperty: RentalProperty = {
+      id: Date.now().toString(),
+      name: `Property ${rentalProperties.length + 1}`,
+      value: 0,
+      rent: 0,
+    };
+    setRentalProperties(prev => [...prev, newProperty]);
+  };
+
+  const handleDeleteRow = (id: string) => {
+    setRentalProperties(prev => prev.filter(p => p.id !== id));
   };
 
   const rentalCalculations = useMemo((): RentalCalculation[] => {
@@ -138,7 +156,7 @@ const RentalYieldCalculator: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (data.rentalProperties) {
+        if (data.rentalProperties && Array.isArray(data.rentalProperties)) {
           setRentalProperties(data.rentalProperties);
           if (data.projectionSettings) {
             setProjectionSettings(data.projectionSettings);
@@ -161,14 +179,21 @@ const RentalYieldCalculator: React.FC = () => {
     showSuccess('Rental yield data has been cleared.');
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between print:hidden">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Calculator className="h-8 w-8" />
           Rental Yield Calculator
         </h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <FileText className="mr-2 h-4 w-4" /> Export to PDF
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
@@ -189,11 +214,11 @@ const RentalYieldCalculator: React.FC = () => {
             </AlertDialogContent>
           </AlertDialog>
           <Button variant="outline" onClick={exportData}>
-            <Upload className="mr-2 h-4 w-4" /> Export
+            <Upload className="mr-2 h-4 w-4" /> Export JSON
           </Button>
           <Button variant="outline" asChild>
             <Label htmlFor="import-file" className="cursor-pointer">
-              <Download className="mr-2 h-4 w-4" /> Import
+              <Download className="mr-2 h-4 w-4" /> Import JSON
               <Input id="import-file" type="file" accept=".json" className="hidden" onChange={importData} />
             </Label>
           </Button>
@@ -237,8 +262,9 @@ const RentalYieldCalculator: React.FC = () => {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Properties & Yields</CardTitle>
+          <Button size="sm" onClick={handleAddRow}><PlusCircle className="mr-2 h-4 w-4" /> Add Property</Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -251,31 +277,44 @@ const RentalYieldCalculator: React.FC = () => {
                   <TableHead className="text-right">Gross Yield % (Today)</TableHead>
                   <TableHead className="text-right">Future Monthly Rent</TableHead>
                   <TableHead className="text-right">Future Yield %</TableHead>
+                  <TableHead className="w-[50px] print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rentalCalculations.map(p => (
                   <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium p-1">
+                      <Input
+                        type="text"
+                        value={p.name}
+                        onChange={e => handleRentalPropertyChange(p.id, 'name', e.target.value)}
+                        className="w-full bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-offset-0 h-auto"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1">
                       <Input
                         type="text"
                         value={p.value.toLocaleString('en-IN')}
                         onChange={e => handleRentalPropertyChange(p.id, 'value', e.target.value)}
-                        className="w-36"
+                        className="w-36 text-right bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-offset-0 h-auto"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="p-1">
                       <Input
                         type="text"
                         value={p.rent.toLocaleString('en-IN')}
                         onChange={e => handleRentalPropertyChange(p.id, 'rent', e.target.value)}
-                        className="w-32"
+                        className="w-32 text-right bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-offset-0 h-auto"
                       />
                     </TableCell>
                     <TableCell className="text-right font-bold text-primary">{p.yieldPercent.toFixed(2)}%</TableCell>
                     <TableCell className="text-right text-green-600 font-medium">{formatCurrency(p.futureRent)}</TableCell>
                     <TableCell className="text-right font-bold text-orange-500">{p.futureYieldPercent.toFixed(2)}%</TableCell>
+                    <TableCell className="p-1 text-center print:hidden">
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(p.id)} className="h-8 w-8">
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -311,7 +350,7 @@ const RentalYieldCalculator: React.FC = () => {
         </Card>
       </div>
 
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle>💡 Golden Rule</CardTitle>
         </CardHeader>

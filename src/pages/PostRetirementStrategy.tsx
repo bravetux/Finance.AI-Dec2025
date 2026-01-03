@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AllocationPieChart from "@/components/AllocationPieChart";
-import { LineChart, Wallet, TrendingUp, Banknote } from "lucide-react";
+import { LineChart, Wallet, TrendingUp, Banknote, DollarSign, Home, Repeat, Briefcase, Users } from "lucide-react";
 
 interface PostRetirementSettings {
   lifeExpectancy: number;
@@ -15,6 +15,14 @@ interface PostRetirementSettings {
   withdrawalAdjustment: number;
   allocations: { equity: number; fds: number; bonds: number; cash: number; };
   returns: { equity: number; fds: number; bonds: number; cash: number; };
+  // New Income Inputs (Annual)
+  annualRentalIncome: number;
+  annualDividendIncome: number;
+  annualBondIncome: number;
+  annualFdInterest: number;
+  annualPensionScheme: number;
+  annualPartTimeJob: number;
+  annualOtherIncome: number;
 }
 
 const PostRetirementStrategy: React.FC = () => {
@@ -29,10 +37,18 @@ const PostRetirementStrategy: React.FC = () => {
       withdrawalAdjustment: 100,
       allocations: { equity: 30, fds: 40, bonds: 25, cash: 5 },
       returns: { equity: 12, fds: 7, bonds: 8, cash: 2.5 },
+      annualRentalIncome: 0,
+      annualDividendIncome: 0,
+      annualBondIncome: 0,
+      annualFdInterest: 0,
+      annualPensionScheme: 0,
+      annualPartTimeJob: 0,
+      annualOtherIncome: 0,
     };
     try {
       const saved = localStorage.getItem('postRetirementStrategyPageSettings');
-      return saved ? JSON.parse(saved) : defaultState;
+      const parsed = saved ? JSON.parse(saved) : {};
+      return { ...defaultState, ...parsed, allocations: { ...defaultState.allocations, ...(parsed.allocations || {}) }, returns: { ...defaultState.returns, ...(parsed.returns || {}) } };
     } catch {
       return defaultState;
     }
@@ -87,6 +103,9 @@ const PostRetirementStrategy: React.FC = () => {
   const handleReturnChange = (category: keyof PostRetirementSettings["returns"], value: number) => {
     handleSettingsChange("returns", { ...settings.returns, [category]: Number(value) });
   };
+  const handleIncomeChange = (field: keyof PostRetirementSettings, value: string) => {
+    handleSettingsChange(field, Number(value) || 0);
+  };
 
   const totalAllocation = useMemo(() => Object.values(settings.allocations).reduce((sum, val) => sum + val, 0), [settings.allocations]);
   
@@ -100,6 +119,16 @@ const PostRetirementStrategy: React.FC = () => {
   const adjustedInitialWithdrawal = useMemo(() => {
     return calculatedFutureExpense * (settings.withdrawalAdjustment / 100);
   }, [calculatedFutureExpense, settings.withdrawalAdjustment]);
+
+  const totalAnnualIncome = useMemo(() => (
+    settings.annualRentalIncome +
+    settings.annualDividendIncome +
+    settings.annualBondIncome +
+    settings.annualFdInterest +
+    settings.annualPensionScheme +
+    settings.annualPartTimeJob +
+    settings.annualOtherIncome
+  ), [settings]);
 
   const fixedIncomeDetails = useMemo(() => {
     const fixedAssets: Array<keyof PostRetirementSettings["allocations"]> = ['fds', 'bonds', 'cash'];
@@ -129,36 +158,61 @@ const PostRetirementStrategy: React.FC = () => {
 
   const simulation = useMemo(() => {
     if (initialCorpus <= 0 || adjustedInitialWithdrawal <= 0 || totalAllocation !== 100) {
-      return { projections: [], yearsLasted: 0, finalCorpus: initialCorpus };
+      return { projections: [], yearsLasted: 0, finalCorpus: initialCorpus, totalIncomeGenerated: 0 };
     }
 
     const projections = [];
     let corpus = initialCorpus;
     let withdrawal = adjustedInitialWithdrawal;
     const maxYears = Math.max(0, settings.lifeExpectancy - retirementAge);
+    let totalIncomeGenerated = 0;
 
     for (let year = 1; year <= maxYears; year++) {
       const age = retirementAge + year;
       const openingBalance = corpus;
       
-      corpus -= withdrawal;
+      // 1. Calculate Net Cash Flow (Withdrawal - Income)
+      const netCashOutflow = withdrawal - totalAnnualIncome;
+      
+      // 2. Adjust corpus by net cash flow
+      corpus -= netCashOutflow;
+      
+      // 3. Check for depletion
       if (corpus <= 0) {
-        projections.push({ year, age, openingBalance, withdrawal, earnings: 0, closingBalance: 0 });
+        projections.push({ year, age, openingBalance, withdrawal, income: totalAnnualIncome, netFlow: netCashOutflow, earnings: 0, closingBalance: 0 });
         break;
       }
       
+      // 4. Calculate Earnings on the remaining corpus
       const earnings = corpus * (weightedAvgReturn / 100);
       corpus += earnings;
+      totalIncomeGenerated += totalAnnualIncome;
       
-      projections.push({ year, age, openingBalance, withdrawal, earnings, closingBalance: corpus });
+      projections.push({ year, age, openingBalance, withdrawal, income: totalAnnualIncome, netFlow: netCashOutflow, earnings, closingBalance: corpus });
       
+      // 5. Adjust withdrawal for inflation for the next year
       withdrawal *= (1 + settings.inflation / 100);
     }
 
-    return { projections, yearsLasted: projections.length, finalCorpus: corpus };
-  }, [initialCorpus, adjustedInitialWithdrawal, retirementAge, settings, weightedAvgReturn, totalAllocation]);
+    return { projections, yearsLasted: projections.length, finalCorpus: corpus, totalIncomeGenerated };
+  }, [initialCorpus, adjustedInitialWithdrawal, retirementAge, settings, weightedAvgReturn, totalAllocation, totalAnnualIncome]);
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+  const renderIncomeInput = (label: string, field: keyof PostRetirementSettings, icon: React.ReactNode) => (
+    <div className="space-y-1">
+      <Label htmlFor={field} className="flex items-center gap-2 text-sm font-medium">
+        {icon} {label} (Annual ₹)
+      </Label>
+      <Input 
+        id={field} 
+        type="number" 
+        value={settings[field]} 
+        onChange={e => handleIncomeChange(field, e.target.value)} 
+        className="text-right h-8"
+      />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -193,20 +247,40 @@ const PostRetirementStrategy: React.FC = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Income Sources Card */}
+        <Card className="lg:col-span-1">
+          <CardHeader><CardTitle>Post-Retirement Income Sources</CardTitle><CardDescription>Annual income generated from sources other than the main corpus.</CardDescription></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+                <span className="font-bold">Total Annual Income:</span>
+                <span className="font-bold text-green-600">{formatCurrency(totalAnnualIncome)}</span>
+            </div>
+            {renderIncomeInput("Rental Income", 'annualRentalIncome', <Home className="h-4 w-4" />)}
+            {renderIncomeInput("Dividend Income", 'annualDividendIncome', <DollarSign className="h-4 w-4" />)}
+            {renderIncomeInput("Bond Income", 'annualBondIncome', <DollarSign className="h-4 w-4" />)}
+            {renderIncomeInput("FD Interest", 'annualFdInterest', <DollarSign className="h-4 w-4" />)}
+            {renderIncomeInput("Pension Schemes", 'annualPensionScheme', <Users className="h-4 w-4" />)}
+            {renderIncomeInput("Part-Time Job", 'annualPartTimeJob', <Briefcase className="h-4 w-4" />)}
+            {renderIncomeInput("Others", 'annualOtherIncome', <Repeat className="h-4 w-4" />)}
+          </CardContent>
+        </Card>
+
+        {/* Investment Strategy Card */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
             <CardTitle>Investment Strategy & Inputs</CardTitle>
             <CardDescription>Define how your corpus will be allocated and the expected returns for each asset class.</CardDescription>
             <p className={`text-sm pt-2 ${totalAllocation !== 100 ? 'text-red-500 font-bold' : 'text-muted-foreground'}`}>Total Allocation: {totalAllocation}% {totalAllocation !== 100 && "(Must be 100%)"}</p>
-        </CardHeader>
-        <CardContent className="grid gap-8 md:grid-cols-2">
+          </CardHeader>
+          <CardContent className="grid gap-8 md:grid-cols-2">
             <div className="flex flex-col items-center justify-center space-y-8">
               <AllocationPieChart data={settings.allocations} />
               
               {/* Fixed Income Summary */}
               <div className="w-full max-w-sm space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
                 <h3 className="text-lg font-semibold flex items-center justify-between">
-                    Fixed Income Generation
+                    Fixed Income Generation (Corpus)
                     <Banknote className="h-5 w-5 text-green-600" />
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -293,8 +367,9 @@ const PostRetirementStrategy: React.FC = () => {
                 );
               })}
             </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader><CardTitle>Year-by-Year Withdrawal Projection</CardTitle></CardHeader>
@@ -306,7 +381,9 @@ const PostRetirementStrategy: React.FC = () => {
                   <TableHead>Year</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead className="text-right">Opening Balance</TableHead>
-                  <TableHead className="text-right">Withdrawal</TableHead>
+                  <TableHead className="text-right">Withdrawal (Expense)</TableHead>
+                  <TableHead className="text-right">Income</TableHead>
+                  <TableHead className="text-right">Net Flow</TableHead>
                   <TableHead className="text-right">Earnings</TableHead>
                   <TableHead className="text-right">Closing Balance</TableHead>
                 </TableRow>
@@ -318,6 +395,10 @@ const PostRetirementStrategy: React.FC = () => {
                     <TableCell>{p.age}</TableCell>
                     <TableCell className="text-right">{formatCurrency(p.openingBalance)}</TableCell>
                     <TableCell className="text-right text-red-500">({formatCurrency(p.withdrawal)})</TableCell>
+                    <TableCell className="text-right text-green-500">{formatCurrency(p.income)}</TableCell>
+                    <TableCell className={`text-right font-bold ${p.netFlow > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                        {p.netFlow > 0 ? `(${formatCurrency(p.netFlow)})` : formatCurrency(-p.netFlow)}
+                    </TableCell>
                     <TableCell className="text-right text-green-500">{formatCurrency(p.earnings)}</TableCell>
                     <TableCell className="text-right font-bold">{formatCurrency(p.closingBalance)}</TableCell>
                   </TableRow>

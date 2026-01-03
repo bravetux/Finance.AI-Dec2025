@@ -1,128 +1,104 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
-import DashboardLayout from "./components/DashboardLayout";
-import Landing from "./pages/Landing";
-import Dashboard from "./pages/Dashboard";
-import Cashflow from "./pages/Cashflow";
-import NetWorthCalculator from "./pages/NetWorthCalculator";
+"use client";
+
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import { 
+  LayoutDashboard, 
+  Calculator, 
+  Target, 
+  TrendingUp, 
+  LogOut, 
+  Wallet,
+  Coins,
+  ShieldCheck,
+  TrendingDown
+} from "lucide-react";
+import Index from "./pages/Index";
 import FutureValueCalculator from "./pages/FutureValueCalculator";
-import Goals from "./pages/Goals";
+import GoalPlanner from "./pages/GoalPlanner";
 import RetirementDashboard from "./pages/RetirementDashboard";
 import ProjectedCashflow from "./pages/ProjectedCashflow";
-import AIPrompt from "./pages/AIPrompt";
-import Reports from "./pages/Reports";
-import NotFound from "./pages/NotFound";
-import FireCalculator from "./pages/FireCalculator";
-import ExpenseReductionPlanner from "./pages/ExpenseReductionPlanner";
-import RealEstate from "./pages/RealEstate";
-import DomesticEquity from "./pages/DomesticEquity";
-import USEquity from "./pages/USEquity";
-import Debt from "./pages/Debt";
-import Gold from "./pages/Gold";
-import MutualFundAllocation from "./pages/MutualFundAllocation";
-import MutualFundSIP from "./pages/MutualFundSIP";
-import CashflowSummary from "./pages/CashflowSummary";
-import Silver from "./pages/Silver";
-import Platinum from "./pages/Platinum";
-import Diamond from "./pages/Diamond";
-import PreciousMetalsSummary from "./pages/PreciousMetalsSummary";
-import SmallCase from "./pages/SmallCase";
-import CanYouRetireNow from "./pages/CanYouRetireNow";
+import CanRetireNow from "./pages/CanRetireNow";
+import LifeInsurance from "./pages/LifeInsurance";
 import PostRetirementStrategy from "./pages/PostRetirementStrategy";
-import LoanTracker from "./pages/LoanTracker";
-import InsuranceHub from "./pages/InsuranceHub";
-import Cryptocurrency from "./pages/Cryptocurrency";
-import FIDOK from "./pages/FIDOK";
-import SIPCalculator from "./pages/SIPCalculator";
-import SWPCalculator from "./pages/SWPCalculator";
-import PPFCalculator from "./pages/PPFCalculator";
-import EPFCalculator from "./pages/EPFCalculator";
-import GoalCalculator from "./pages/GoalCalculator";
-import ROICalculator from "./pages/ROICalculator";
-import CarAffordableCalculator from "./pages/CarAffordableCalculator";
-import P2PLendingCalculator from "./pages/P2PLendingCalculator";
-import AdvanceTaxCalculator from "./pages/AdvanceTaxCalculator";
-import CompoundInterestCalculator from "./pages/CompoundInterestCalculator";
-import InterestCalculator from "./pages/InterestCalculator";
-import InvestmentCalculator from "./pages/InvestmentCalculator";
-import EMICalculator from "./pages/EMICalculator";
-import PercentageCalculator from "./pages/PercentageCalculator";
-import AssetAllocationCalculator from "./pages/AssetAllocationCalculator";
-import Calculators from "./pages/Calculators";
-import Features from "./pages/Features";
-import RentVacateCalculator from "./pages/RentVacateCalculator";
 
-const queryClient = new QueryClient();
+const SidebarItem = ({ icon: Icon, label, path }: { icon: any, label: string, path: string }) => {
+  const location = useLocation();
+  const isActive = location.pathname === path;
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" storageKey="vite-ui-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="cashflow" element={<Cashflow />} />
-              <Route path="cashflow-summary" element={<CashflowSummary />} />
-              <Route path="projected-cashflow" element={<ProjectedCashflow />} />
-              <Route path="net-worth" element={<NetWorthCalculator />} />
-              <Route path="real-estate" element={<RealEstate />} />
-              <Route path="domestic-equity" element={<DomesticEquity />} />
-              <Route path="mutual-fund-allocation" element={<MutualFundAllocation />} />
-              <Route path="mutual-fund-sip" element={<MutualFundSIP />} />
-              <Route path="small-case" element={<SmallCase />} />
-              <Route path="us-equity" element={<USEquity />} />
-              <Route path="debt" element={<Debt />} />
-              <Route path="precious-metals-summary" element={<PreciousMetalsSummary />} />
-              <Route path="gold" element={<Gold />} />
-              <Route path="silver" element={<Silver />} />
-              <Route path="platinum" element={<Platinum />} />
-              <Route path="diamond" element={<Diamond />} />
-              <Route path="cryptocurrency" element={<Cryptocurrency />} />
-              <Route path="loan-tracker" element={<LoanTracker />} />
-              <Route path="insurance-hub" element={<InsuranceHub />} />
-              <Route path="fidok" element={<FIDOK />} />
-              <Route path="future-value" element={<FutureValueCalculator />} />
-              <Route path="goals" element={<Goals />} />
-              <Route path="retirement" element={<RetirementDashboard />} />
-              <Route path="can-you-retire-now" element={<CanYouRetireNow />} />
-              <Route path="fire-calculator" element={<FireCalculator />} />
-              <Route path="post-retirement-strategy" element={<PostRetirementStrategy />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="ai-prompt" element={<AIPrompt />} />
-              <Route path="calculators" element={<Calculators />} />
-              <Route path="goal-calculator" element={<GoalCalculator />} />
-              <Route path="sip-calculator" element={<SIPCalculator />} />
-              <Route path="swp-calculator" element={<SWPCalculator />} />
-              <Route path="ppf-calculator" element={<PPFCalculator />} />
-              <Route path="epf-calculator" element={<EPFCalculator />} />
-              <Route path="investment-calculator" element={<InvestmentCalculator />} />
-              <Route path="interest-calculator" element={<InterestCalculator />} />
-              <Route path="roi-calculator" element={<ROICalculator />} />
-              <Route path="emi-calculator" element={<EMICalculator />} />
-              <Route path="percentage-calculator" element={<PercentageCalculator />} />
-              <Route path="asset-allocation-calculator" element={<AssetAllocationCalculator />} />
-              <Route path="car-affordable-calculator" element={<CarAffordableCalculator />} />
-              <Route path="p2p-lending-calculator" element={<P2PLendingCalculator />} />
-              <Route path="advance-tax-calculator" element={<AdvanceTaxCalculator />} />
-              <Route path="compound-interest-calculator" element={<CompoundInterestCalculator />} />
-              <Route path="expense-reduction-planner" element={<ExpenseReductionPlanner />} />
-              <Route path="rent-vacate-calculator" element={<RentVacateCalculator />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+  return (
+    <Link
+      to={path}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+        isActive 
+          ? "bg-blue-600 text-white" 
+          : "text-gray-400 hover:bg-gray-800 hover:text-white"
+      }`}
+    >
+      <Icon size={20} />
+      <span className="font-medium">{label}</span>
+    </Link>
+  );
+};
+
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="flex min-h-screen bg-black text-white">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-gray-800 p-4 hidden md:flex flex-col fixed h-screen">
+        <div className="flex items-center gap-2 mb-8 px-2">
+          <div className="bg-blue-600 p-1.5 rounded-lg">
+            <Coins size={24} className="text-white" />
+          </div>
+          <span className="text-xl font-bold">RetireSmart</span>
+        </div>
+
+        <nav className="flex-1 space-y-1">
+          <SidebarItem icon={LayoutDashboard} label="Dashboard" path="/" />
+          <SidebarItem icon={Calculator} label="Retirement Planner" path="/retirement" />
+          <SidebarItem icon={Target} label="Goal Planner" path="/goals" />
+          <SidebarItem icon={TrendingUp} label="FV Calculator" path="/fv" />
+          <SidebarItem icon={TrendingDown} label="Projected Cashflow" path="/cashflow" />
+          <SidebarItem icon={ShieldCheck} label="Post-Retirement Strategy" path="/post-retirement" />
+          <SidebarItem icon={Wallet} label="Can you Retire Now?" path="/can-retire" />
+          <SidebarItem icon={ShieldCheck} label="Life Insurance Needs" path="/insurance" />
+        </nav>
+
+        <div className="pt-4 mt-auto border-t border-gray-800">
+          <button className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white w-full transition-colors">
+            <LogOut size={20} />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 md:ml-64 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/retirement" element={<RetirementDashboard />} />
+          <Route path="/goals" element={<GoalPlanner />} />
+          <Route path="/fv" element={<FutureValueCalculator />} />
+          <Route path="/cashflow" element={<ProjectedCashflow />} />
+          <Route path="/can-retire" element={<CanRetireNow />} />
+          <Route path="/insurance" element={<LifeInsurance />} />
+          <Route path="/post-retirement" element={<PostRetirementStrategy />} />
+        </Routes>
+      </Layout>
+    </Router>
+  );
+}
 
 export default App;

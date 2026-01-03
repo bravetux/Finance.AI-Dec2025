@@ -153,6 +153,7 @@ const navItems = [
           { name: "Health Insurance Calculator", path: "/dashboard/health-insurance-calculator", icon: ShieldCheck, type: 'link' },
           { name: "Inflation Impact", path: "/dashboard/inflation-impact-calculator", icon: TrendingDown, type: 'link' },
           { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
+          { name: "Rental Yield Calculator", path: "/dashboard/rental-yield-calculator", icon: Home, type: 'link' },
         ]
       },
       { 
@@ -175,7 +176,6 @@ const navItems = [
         type: 'section',
         children: [
           { name: "Buy vs. Rent Calculator", path: "/dashboard/buy-vs-rent-calculator", icon: ArrowRightLeft, type: 'link' },
-          { name: "Rental Yield Calculator", path: "/dashboard/rental-yield-calculator", icon: Home, type: 'link' },
           { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Handshake, type: 'link' },
         ]

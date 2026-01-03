@@ -44,6 +44,10 @@ import {
   DoorOpen,
   ChevronLeft,
   ChevronRight,
+  TrendingDown,
+  Shield,
+  GraduationCap,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -138,44 +142,55 @@ const navItems = [
     children: [
       { name: "Overview", path: "/dashboard/calculators", icon: LayoutDashboard, type: 'link' },
       { 
+        name: "Planning & Risk", 
+        icon: Target,
+        type: 'section',
+        children: [
+          { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Target, type: 'link' },
+          { name: "Child Education Fund", path: "/dashboard/child-education-fund-calculator", icon: GraduationCap, type: 'link' },
+          { name: "HLV (Insurance) Calculator", path: "/dashboard/hlv-calculator", icon: Shield, type: 'link' },
+          { name: "Inflation Impact", path: "/dashboard/inflation-impact-calculator", icon: TrendingDown, type: 'link' },
+          { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
+        ]
+      },
+      { 
         name: "Investment", 
         icon: TrendingUp,
         type: 'section',
         children: [
           { name: "Growth Calculator", path: "/dashboard/investment-calculator", icon: TrendingUp, type: 'link' },
           { name: "Asset Allocation", path: "/dashboard/asset-allocation-calculator", icon: PieChart, type: 'link' },
-          { name: "Rental Yield Calculator", path: "/dashboard/rental-yield-calculator", icon: Home, type: 'link' },
           { name: "SIP Calculator", path: "/dashboard/sip-calculator", icon: Repeat, type: 'link' },
           { name: "SWP Calculator", path: "/dashboard/swp-calculator", icon: Calculator, type: 'link' },
           { name: "PPF Calculator", path: "/dashboard/ppf-calculator", icon: Calculator, type: 'link' },
           { name: "EPF Calculator", path: "/dashboard/epf-calculator", icon: Calculator, type: 'link' },
-          { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Target, type: 'link' },
           { name: "ROI Calculator", path: "/dashboard/roi-calculator", icon: TrendingUp, type: 'link' },
         ]
       },
       { 
-        name: "Interest", 
-        icon: Percent,
+        name: "Real Estate & Loans", 
+        icon: Home,
         type: 'section',
         children: [
+          { name: "Buy vs. Rent Calculator", path: "/dashboard/buy-vs-rent-calculator", icon: ArrowRightLeft, type: 'link' },
+          { name: "Rental Yield Calculator", path: "/dashboard/rental-yield-calculator", icon: Home, type: 'link' },
           { name: "EMI Calculator", path: "/dashboard/emi-calculator", icon: CreditCard, type: 'link' },
-          { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
-          { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Sparkles, type: 'link' },
           { name: "P2P Lending Calculator", path: "/dashboard/p2p-lending-calculator", icon: Handshake, type: 'link' },
         ]
       },
       { 
-        name: "General", 
-        icon: Calculator,
+        name: "Interest & Tax", 
+        icon: Percent,
         type: 'section',
         children: [
+          { name: "Interest Calculator", path: "/dashboard/interest-calculator", icon: Percent, type: 'link' },
+          { name: "Compound Interest", path: "/dashboard/compound-interest-calculator", icon: Sparkles, type: 'link' },
           { name: "Percentage Calculator", path: "/dashboard/percentage-calculator", icon: Percent, type: 'link' },
+          { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
         ]
       },
-      { name: "Advance Tax Calculator", path: "/dashboard/advance-tax-calculator", icon: Calculator, type: 'link' },
-      { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
       { 
-        name: "More", 
+        name: "Misc", 
         icon: MoreHorizontal,
         type: 'section',
         children: [

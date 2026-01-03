@@ -21,7 +21,11 @@ import {
   CreditCard,
   PieChart,
   DoorOpen,
-  Home
+  Home,
+  TrendingDown,
+  Shield,
+  GraduationCap,
+  ArrowRightLeft
 } from "lucide-react";
 
 const calculatorList = [
@@ -31,6 +35,14 @@ const calculatorList = [
     path: "/dashboard/goal-calculator",
     icon: Target,
     color: "text-blue-500",
+    category: "Planning"
+  },
+  {
+    name: "Child Education Fund",
+    description: "Plan the required SIP to meet the rising cost of your child's future education.",
+    path: "/dashboard/child-education-fund-calculator",
+    icon: GraduationCap,
+    color: "text-pink-600",
     category: "Planning"
   },
   {
@@ -50,12 +62,36 @@ const calculatorList = [
     category: "Investing"
   },
   {
+    name: "Buy vs. Rent",
+    description: "Compare the long-term net worth outcome of buying a home versus renting and investing the difference.",
+    path: "/dashboard/buy-vs-rent-calculator",
+    icon: ArrowRightLeft,
+    color: "text-purple-500",
+    category: "Real Estate"
+  },
+  {
     name: "Rental Yield",
     description: "Evaluate your real estate investment performance using property value and rental income.",
     path: "/dashboard/rental-yield-calculator",
     icon: Home,
     color: "text-emerald-500",
     category: "Investing"
+  },
+  {
+    name: "Inflation Impact",
+    description: "Visualize how inflation erodes purchasing power and increases the future cost of your expenses.",
+    path: "/dashboard/inflation-impact-calculator",
+    icon: TrendingDown,
+    color: "text-red-600",
+    category: "General"
+  },
+  {
+    name: "Human Life Value (HLV)",
+    description: "Estimate the total insurance coverage needed to secure your family's financial future.",
+    path: "/dashboard/hlv-calculator",
+    icon: Shield,
+    color: "text-cyan-600",
+    category: "Insurance"
   },
   {
     name: "EMI Calculator",

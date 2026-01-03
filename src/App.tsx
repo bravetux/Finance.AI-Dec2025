@@ -56,6 +56,10 @@ import Calculators from "./pages/Calculators";
 import Features from "./pages/Features";
 import RentVacateCalculator from "./pages/RentVacateCalculator";
 import RentalYieldCalculator from "./pages/RentalYieldCalculator";
+import InflationImpactCalculator from "./pages/InflationImpactCalculator";
+import HLVCalculator from "./pages/HLVCalculator";
+import ChildEducationFundCalculator from "./pages/ChildEducationFundCalculator";
+import BuyVsRentCalculator from "./pages/BuyVsRentCalculator";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +122,10 @@ const App = () => (
               <Route path="expense-reduction-planner" element={<ExpenseReductionPlanner />} />
               <Route path="rent-vacate-calculator" element={<RentVacateCalculator />} />
               <Route path="rental-yield-calculator" element={<RentalYieldCalculator />} />
+              <Route path="inflation-impact-calculator" element={<InflationImpactCalculator />} />
+              <Route path="hlv-calculator" element={<HLVCalculator />} />
+              <Route path="child-education-fund-calculator" element={<ChildEducationFundCalculator />} />
+              <Route path="buy-vs-rent-calculator" element={<BuyVsRentCalculator />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

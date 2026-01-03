@@ -1,195 +1,305 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { CheckCircle, XCircle } from "lucide-react";
+import {
+  getLiquidAssetsFromNetWorth,
+  getAnnualExpensesFromFinance,
+  getProjectedAccumulatedCorpus,
+  getLiquidFutureValueTotal,
+  getRetirementCorpusMode,
+  setRetirementCorpusMode,
+  getRetirementData,
+} from "@/utils/localStorageUtils";
+import AllocationPieChart from "@/components/AllocationPieChart";
+
+interface SimulationInputs {
+  allocations: { equity: number; fds: number; bonds: number; cash: number; };
+  returns: { equity: number; fds: number; bonds: number; cash: number; };
+}
 
 const CanYouRetireNow: React.FC = () => {
-  const [data, setData] = useState({
-    corpus: 0,
-    annualExpenses: 0,
-    inflation: 6,
-    expectedReturn: 8,
-    lifeExpectancy: 85,
-    currentAge: 40
+  const [liquidAssets, setLiquidAssets] = useState(0);
+  const [projectedCorpus, setProjectedCorpus] = useState(0);
+  const [liquidFutureValue, setLiquidFutureValue] = useState(0);
+  const [annualExpenses, setAnnualExpenses] = useState(0);
+  const [corpusMode, setCorpusMode] = useState<'now' | 'future'>(getRetirementCorpusMode());
+  const [withdrawalRate, setWithdrawalRate] = useState(4);
+  const [showWithdrawalSimulation, setShowWithdrawalSimulation] = useState(false);
+
+  const [sharedData, setSharedData] = useState({ currentAge: 30, lifeExpectancy: 85, inflation: 6 });
+  const [simulationInputs, setSimulationInputs] = useState<SimulationInputs>(() => {
+    // These settings are local to this page's simulation
+    return {
+      allocations: { equity: 30, fds: 40, bonds: 25, cash: 5 },
+      returns: { equity: 12, fds: 7, bonds: 8, cash: 2.5 },
+    };
   });
 
   useEffect(() => {
-    const loadData = () => {
-      try {
-        const assets = JSON.parse(localStorage.getItem('assets') || '[]');
-        const retirementData = JSON.parse(localStorage.getItem('retirementData') || '{}');
-        
-        const totalCorpus = assets.reduce((sum: number, asset: any) => sum + (Number(asset.value) || 0), 0);
-        
-        setData({
-          corpus: totalCorpus,
-          annualExpenses: retirementData.currentAnnualExpenses || 0,
-          inflation: retirementData.inflation || 6,
-          expectedReturn: retirementData.expectedReturn || 8,
-          lifeExpectancy: retirementData.lifeExpectancy || 85,
-          currentAge: retirementData.currentAge || 40
-        });
-      } catch (e) {
-        console.error("Error loading data for retirement check", e);
-      }
+    const updateData = () => {
+      setLiquidAssets(getLiquidAssetsFromNetWorth());
+      setAnnualExpenses(getAnnualExpensesFromFinance());
+      setProjectedCorpus(getProjectedAccumulatedCorpus());
+      setLiquidFutureValue(getLiquidFutureValueTotal());
+      setCorpusMode(getRetirementCorpusMode());
+      
+      const retirementData = getRetirementData();
+      setSharedData({
+        currentAge: retirementData.currentAge,
+        lifeExpectancy: retirementData.lifeExpectancy,
+        inflation: retirementData.inflation,
+      });
     };
-
-    loadData();
-    window.addEventListener('storage', loadData);
-    return () => window.removeEventListener('storage', loadData);
+    updateData();
+    window.addEventListener('storage', updateData);
+    return () => window.removeEventListener('storage', updateData);
   }, []);
 
-  // Save current state for PostRetirementStrategy page to pick up
-  useEffect(() => {
-    localStorage.setItem('canRetireNowData', JSON.stringify({ corpus: data.corpus }));
-  }, [data.corpus]);
+  const handleSimulationInputChange = (field: keyof SimulationInputs, value: any) => {
+    setSimulationInputs((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const simulation = useMemo(() => {
-    const results = [];
-    let currentCorpus = data.corpus;
-    let currentExpense = data.annualExpenses;
-    const yearsToSimulate = Math.max(1, data.lifeExpectancy - data.currentAge);
+  const totalStartingCorpus = useMemo(() => {
+    if (corpusMode === 'now') {
+      return liquidAssets;
+    } else {
+      return liquidFutureValue + projectedCorpus;
+    }
+  }, [liquidAssets, liquidFutureValue, projectedCorpus, corpusMode]);
+
+  const totalAllocation = useMemo(() => Object.values(simulationInputs.allocations).reduce((sum, val) => sum + val, 0), [simulationInputs.allocations]);
+  
+  const weightedAvgReturn = useMemo(() => {
+    if (totalAllocation !== 100) return 0;
+    return Object.keys(simulationInputs.allocations).reduce((acc, key) => 
+      acc + (simulationInputs.allocations[key as keyof typeof simulationInputs.allocations] / 100) * simulationInputs.returns[key as keyof typeof simulationInputs.returns], 0
+    );
+  }, [simulationInputs.allocations, simulationInputs.returns, totalAllocation]);
+
+  const { yearsCorpusWillLast, canRetire, shortfall } = useMemo(() => {
+    if (totalStartingCorpus <= 0 || annualExpenses <= 0 || totalAllocation !== 100) {
+      return { yearsCorpusWillLast: 0, canRetire: false, shortfall: annualExpenses > 0 ? annualExpenses * 25 : 0 };
+    }
+
+    let currentFund = totalStartingCorpus;
+    let currentWithdrawal = annualExpenses;
+    let years = 0;
+    const maxYears = sharedData.lifeExpectancy - sharedData.currentAge;
+
+    while (currentFund > 0 && years < maxYears) {
+      currentFund -= currentWithdrawal;
+      if (currentFund <= 0) break;
+      currentFund *= (1 + weightedAvgReturn / 100);
+      currentWithdrawal *= (1 + sharedData.inflation / 100);
+      years++;
+    }
+
+    const retirementCorpusNeeded = annualExpenses * 25;
+    const canRetireStatus = years >= maxYears;
     
-    // If corpus is zero or expenses are not set, return empty but valid structure
-    if (currentCorpus <= 0 || currentExpense <= 0) {
-        return { projections: [], yearsLasted: 0, status: 'warning' };
+    return {
+      yearsCorpusWillLast: years,
+      canRetire: canRetireStatus,
+      shortfall: Math.max(0, retirementCorpusNeeded - totalStartingCorpus),
+    };
+  }, [totalStartingCorpus, annualExpenses, sharedData, weightedAvgReturn, totalAllocation]);
+
+  const annualWithdrawal = useMemo(() => {
+    return totalStartingCorpus * (withdrawalRate / 100);
+  }, [totalStartingCorpus, withdrawalRate]);
+
+  const monthlyWithdrawal = useMemo(() => {
+    return annualWithdrawal / 12;
+  }, [annualWithdrawal]);
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('canRetireNowData', JSON.stringify({
+            corpus: totalStartingCorpus,
+            annualExpenses: annualExpenses,
+            currentAge: sharedData.currentAge,
+        }));
+        setRetirementCorpusMode(corpusMode);
+    } catch (error) {
+        console.error("Failed to save data for post-retirement page:", error);
     }
-
-    for (let year = 1; year <= yearsToSimulate; year++) {
-      const openingBalance = currentCorpus;
-      
-      // Withdraw at the start of the year
-      currentCorpus -= currentExpense;
-      
-      if (currentCorpus < 0) {
-        // Did not last the full year
-        break;
-      }
-      
-      // Add earnings on the remaining balance
-      currentCorpus += (currentCorpus * (data.expectedReturn / 100));
-      
-      results.push({
-        year,
-        age: data.currentAge + year,
-        openingBalance,
-        withdrawal: currentExpense,
-        closingBalance: currentCorpus
-      });
-
-      // Inflate expenses for next year
-      currentExpense *= (1 + data.inflation / 100);
-    }
-
-    const yearsLasted = results.length;
-    const status = yearsLasted >= yearsToSimulate ? 'success' : 'warning';
-
-    return { projections: results, yearsLasted, status };
-  }, [data]);
+  }, [totalStartingCorpus, annualExpenses, sharedData.currentAge, corpusMode]);
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Can You Retire Now?</h1>
-      <p className="text-muted-foreground">This analysis checks if your current assets are enough to sustain your current lifestyle indefinitely.</p>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Current Corpus</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(data.corpus)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Annual Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{formatCurrency(data.annualExpenses)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Corpus Lasts For</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${simulation.status === 'success' ? 'text-green-600' : 'text-red-500'}`}>
-              {simulation.yearsLasted} Years
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Until age {data.currentAge + simulation.yearsLasted}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className={`border-2 ${simulation.status === 'success' ? 'border-green-500 bg-green-50/30' : 'border-orange-500 bg-orange-50/30'}`}>
-        <CardHeader className="flex flex-row items-center gap-4">
-          {simulation.status === 'success' ? (
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-          ) : (
-            <XCircle className="h-10 w-10 text-orange-600" />
-          )}
-          <div>
-            <CardTitle>
-              {simulation.status === 'success' 
-                ? "Yes, You Can Retire!" 
-                : simulation.yearsLasted > 0 
-                  ? "Not Quite Ready" 
-                  : "Insufficient Data or Corpus"}
-            </CardTitle>
-            <CardDescription className="text-foreground/80">
-              {simulation.status === 'success' 
-                ? `Your corpus is projected to last until age ${data.currentAge + simulation.yearsLasted}+.` 
-                : simulation.yearsLasted > 0 
-                  ? `Your corpus will only last for ${simulation.yearsLasted} years (until age ${data.currentAge + simulation.yearsLasted}).`
-                  : "Please ensure your assets and annual expenses are recorded in the Assets and Retirement sections."}
-            </CardDescription>
-          </div>
+      <Card>
+        <CardHeader>
+            <CardTitle>Net Corpus for Retirement</CardTitle>
+            <CardDescription>This is the final amount available for your retirement.</CardDescription>
         </CardHeader>
+        <CardContent className="space-y-2">
+            {corpusMode === 'now' && (
+              <div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Current Liquid Corpus</span>
+                      <span className="font-medium">{formatCurrency(liquidAssets)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-right">From Net Worth page</p>
+              </div>
+            )}
+            {corpusMode === 'future' && (
+                <>
+                    <div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Future Value of Liquid Assets</span>
+                            <span className="font-medium">{formatCurrency(liquidFutureValue)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-right">From Future Value Calculator page</p>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">+ Projected Corpus</span>
+                            <span className="font-medium">{formatCurrency(projectedCorpus)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-right">From Projected Cashflow page</p>
+                    </div>
+                </>
+            )}
+            <div className="border-t pt-2 mt-2 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <Switch
+                        id="corpus-mode-toggle"
+                        checked={corpusMode === 'future'}
+                        onCheckedChange={(checked) => setCorpusMode(checked ? 'future' : 'now')}
+                    />
+                    <Label htmlFor="corpus-mode-toggle" className="text-muted-foreground">
+                        Now or Future
+                    </Label>
+                </div>
+                <span className="text-2xl font-bold text-green-600">{formatCurrency(totalStartingCorpus)}</span>
+            </div>
+        </CardContent>
+      </Card>
+
+      <Card className={canRetire ? "bg-green-50 dark:bg-green-900/30 border-green-500" : "bg-red-50 dark:bg-red-900/30 border-red-500"}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {canRetire ? <CheckCircle className="h-8 w-8 text-green-600" /> : <XCircle className="h-8 w-8 text-red-600" />}
+            Verdict: {canRetire ? "Yes, you can likely retire now." : "No, not yet."}
+          </CardTitle>
+          <CardDescription>
+            The verdict is based on whether your 'Total Starting Corpus' can sustain your 'Current Annual Expenses' (adjusted for inflation) until your 'Life Expectancy'.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-lg">
+          <p>Your net corpus of <strong>{formatCurrency(totalStartingCorpus)}</strong> will last for approximately <strong>{yearsCorpusWillLast} years</strong> (until age {sharedData.currentAge + yearsCorpusWillLast}).</p>
+          {!canRetire && (
+            shortfall > 0 ? (
+              <p>You have a shortfall of approximately <strong>{formatCurrency(shortfall)}</strong> to reach a standard retirement corpus (25x annual expenses).</p>
+            ) : (
+              <p className="text-orange-600 font-semibold">While you meet the 25x expenses rule, your current investment strategy (returns vs. inflation) is not projected to sustain your withdrawals for your entire retirement.</p>
+            )
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col items-start space-y-4 pt-4 border-t">
+          <div className="w-full flex justify-between items-center">
+            <CardTitle className="text-lg">Withdrawal Rate Simulation</CardTitle>
+            <div className="flex items-center space-x-2">
+                <Switch
+                    id="toggle-simulation"
+                    checked={showWithdrawalSimulation}
+                    onCheckedChange={setShowWithdrawalSimulation}
+                />
+                <Label htmlFor="toggle-simulation">{showWithdrawalSimulation ? 'Hide' : 'Show'}</Label>
+            </div>
+          </div>
+
+          {showWithdrawalSimulation && (
+            <div className="w-full space-y-4 pt-2">
+              <div>
+                <Label htmlFor="withdrawal-slider" className="font-semibold">
+                  Withdrawal Rate: {withdrawalRate.toFixed(1)}%
+                </Label>
+                <Slider
+                  id="withdrawal-slider"
+                  value={[withdrawalRate]}
+                  onValueChange={(val) => setWithdrawalRate(val[0])}
+                  min={1}
+                  max={10}
+                  step={0.5}
+                  className="mt-2"
+                />
+              </div>
+              <div className="w-full space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Annual Withdrawal:</span>
+                  <span className="font-bold">{formatCurrency(annualWithdrawal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Monthly Withdrawal:</span>
+                  <span className="font-bold">{formatCurrency(monthlyWithdrawal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardFooter>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Yearly Breakdown</CardTitle>
-          <CardDescription>How your corpus changes over time considering inflation and returns.</CardDescription>
+          <CardTitle>Retirement Simulation Inputs</CardTitle>
+          <CardDescription>Adjust these values to match your expectations. Core assumptions are managed on the Retirement Dashboard.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto max-h-96">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead className="text-right">Opening Balance</TableHead>
-                  <TableHead className="text-right">Withdrawal</TableHead>
-                  <TableHead className="text-right">Closing Balance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {simulation.projections.length > 0 ? (
-                  simulation.projections.map((p) => (
-                    <TableRow key={p.year}>
-                      <TableCell>{p.year}</TableCell>
-                      <TableCell>{p.age}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(p.openingBalance)}</TableCell>
-                      <TableCell className="text-right text-red-500">({formatCurrency(p.withdrawal)})</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(p.closingBalance)}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No projection data available. Check your assets and expenses.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><Label htmlFor="currentAge">Current Age</Label><Input id="currentAge" type="number" value={sharedData.currentAge} disabled /></div>
+            <div><Label htmlFor="lifeExpectancy">Life Expectancy</Label><Input id="lifeExpectancy" type="number" value={sharedData.lifeExpectancy} disabled /></div>
+            <div className="md:col-span-2">
+              <Label>Expected Annual Inflation</Label>
+              <Input value={`${sharedData.inflation.toFixed(1)}%`} disabled />
+            </div>
           </div>
+          <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex justify-between md:col-span-2"><span className="text-muted-foreground">Current Annual Expenses for Retirement:</span><span className="font-bold">{formatCurrency(annualExpenses)}</span></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Post-Retirement Investment Strategy</CardTitle>
+            <CardDescription>Define how your corpus will be allocated and the expected returns for the simulation.</CardDescription>
+            <p className={`text-sm pt-2 ${totalAllocation !== 100 ? 'text-red-500 font-bold' : 'text-muted-foreground'}`}>Total Allocation: {totalAllocation}% {totalAllocation !== 100 && "(Must be 100%)"}</p>
+        </CardHeader>
+        <CardContent className="grid gap-8 md:grid-cols-2">
+            <div className="flex items-center justify-center">
+              <AllocationPieChart data={simulationInputs.allocations} />
+            </div>
+            <div className="space-y-6">
+              {Object.keys(simulationInputs.allocations).map((key) => {
+                const category = key as keyof SimulationInputs["allocations"];
+                return (
+                  <div key={category} className="grid grid-cols-2 gap-4 items-end">
+                    <div className="space-y-2">
+                      <Label className="capitalize text-md">{category}</Label>
+                      <Slider value={[simulationInputs.allocations[category]]} onValueChange={(val) => handleSimulationInputChange("allocations", { ...simulationInputs.allocations, [category]: val[0] })} min={0} max={100} step={5} />
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{simulationInputs.allocations[category]}%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`return-${category}`} className="text-xs">Return (%)</Label>
+                      <Input id={`return-${category}`} type="number" value={simulationInputs.returns[category]} onChange={(e) => handleSimulationInputChange("returns", { ...simulationInputs.returns, [category]: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
         </CardContent>
       </Card>
     </div>

@@ -150,6 +150,7 @@ const navItems = [
           { name: "Goal Calculator", path: "/dashboard/goal-calculator", icon: Target, type: 'link' },
           { name: "Child Education Fund", path: "/dashboard/child-education-fund-calculator", icon: GraduationCap, type: 'link' },
           { name: "HLV (Insurance) Calculator", path: "/dashboard/hlv-calculator", icon: Shield, type: 'link' },
+          { name: "Health Insurance Calculator", path: "/dashboard/health-insurance-calculator", icon: ShieldCheck, type: 'link' },
           { name: "Inflation Impact", path: "/dashboard/inflation-impact-calculator", icon: TrendingDown, type: 'link' },
           { name: "Expense Reduction Planner", path: "/dashboard/expense-reduction-planner", icon: SheetIcon, type: 'link' },
         ]

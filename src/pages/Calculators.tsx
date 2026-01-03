@@ -25,7 +25,8 @@ import {
   TrendingDown,
   Shield,
   GraduationCap,
-  ArrowRightLeft
+  ArrowRightLeft,
+  ShieldCheck
 } from "lucide-react";
 
 const calculatorList = [
@@ -44,6 +45,22 @@ const calculatorList = [
     icon: GraduationCap,
     color: "text-pink-600",
     category: "Planning"
+  },
+  {
+    name: "HLV (Insurance) Calculator",
+    description: "Estimate the total insurance coverage needed to secure your family's financial future.",
+    path: "/dashboard/hlv-calculator",
+    icon: Shield,
+    color: "text-cyan-600",
+    category: "Insurance"
+  },
+  {
+    name: "Health Insurance Calculator",
+    description: "Estimate the recommended health insurance coverage needed today and project its future cost.",
+    path: "/dashboard/health-insurance-calculator",
+    icon: ShieldCheck,
+    color: "text-indigo-500",
+    category: "Insurance"
   },
   {
     name: "Investment Growth",
@@ -84,14 +101,6 @@ const calculatorList = [
     icon: TrendingDown,
     color: "text-red-600",
     category: "General"
-  },
-  {
-    name: "Human Life Value (HLV)",
-    description: "Estimate the total insurance coverage needed to secure your family's financial future.",
-    path: "/dashboard/hlv-calculator",
-    icon: Shield,
-    color: "text-cyan-600",
-    category: "Insurance"
   },
   {
     name: "EMI Calculator",

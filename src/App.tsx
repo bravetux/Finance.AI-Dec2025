@@ -60,6 +60,7 @@ import InflationImpactCalculator from "./pages/InflationImpactCalculator";
 import HLVCalculator from "./pages/HLVCalculator";
 import ChildEducationFundCalculator from "./pages/ChildEducationFundCalculator";
 import BuyVsRentCalculator from "./pages/BuyVsRentCalculator";
+import HealthInsuranceCalculator from "./pages/HealthInsuranceCalculator";
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,7 @@ const App = () => (
               <Route path="hlv-calculator" element={<HLVCalculator />} />
               <Route path="child-education-fund-calculator" element={<ChildEducationFundCalculator />} />
               <Route path="buy-vs-rent-calculator" element={<BuyVsRentCalculator />} />
+              <Route path="health-insurance-calculator" element={<HealthInsuranceCalculator />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

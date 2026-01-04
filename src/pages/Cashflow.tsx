@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { showError, showSuccess } from "@/utils/toast";
+import CurrencyInput from "@/components/CurrencyInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,7 +163,7 @@ const Cashflow: React.FC = () => {
   const totalAnnualIncome =
     (financeData.postTaxSalaryIncome || 0) +
     (financeData.businessIncome || 0) +
-    totalRentalIncome +
+    totalRentalIncome * 12 +
     (financeData.fdInterest || 0) +
     (financeData.bondIncome || 0) +
     (financeData.dividendIncome || 0);
@@ -311,82 +312,74 @@ const Cashflow: React.FC = () => {
             {isEditingIncome ? (
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="postTaxSalaryIncome">Post-Tax Salary Income:</Label>
-                  <Input
+                  <Label htmlFor="postTaxSalaryIncome">Post-Tax Salary Income (Annual):</Label>
+                  <CurrencyInput
                     id="postTaxSalaryIncome"
-                    type="number"
                     value={financeData.postTaxSalaryIncome}
-                    onChange={(e) => setFinanceData({...financeData, postTaxSalaryIncome: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, postTaxSalaryIncome: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="businessIncome">Business Income:</Label>
-                  <Input
+                  <Label htmlFor="businessIncome">Business Income (Annual):</Label>
+                  <CurrencyInput
                     id="businessIncome"
-                    type="number"
                     value={financeData.businessIncome}
-                    onChange={(e) => setFinanceData({...financeData, businessIncome: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, businessIncome: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rentalProperty1">Rental Montly Income (Property 1):</Label>
-                  <Input
+                  <Label htmlFor="rentalProperty1">Rental Monthly Income (Property 1):</Label>
+                  <CurrencyInput
                     id="rentalProperty1"
-                    type="number"
                     value={financeData.rentalProperty1}
-                    onChange={(e) => setFinanceData({...financeData, rentalProperty1: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, rentalProperty1: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rentalProperty2">Rental Montly Income (Property 2):</Label>
-                  <Input
+                  <Label htmlFor="rentalProperty2">Rental Monthly Income (Property 2):</Label>
+                  <CurrencyInput
                     id="rentalProperty2"
-                    type="number"
                     value={financeData.rentalProperty2}
-                    onChange={(e) => setFinanceData({...financeData, rentalProperty2: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, rentalProperty2: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="rentalProperty3">Rental Monthly Income (Property 3):</Label>
-                  <Input
+                  <CurrencyInput
                     id="rentalProperty3"
-                    type="number"
                     value={financeData.rentalProperty3}
-                    onChange={(e) => setFinanceData({...financeData, rentalProperty3: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, rentalProperty3: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="fdInterest">FD Interests:</Label>
-                  <Input
+                  <Label htmlFor="fdInterest">FD Interest (Annual):</Label>
+                  <CurrencyInput
                     id="fdInterest"
-                    type="number"
                     value={financeData.fdInterest}
-                    onChange={(e) => setFinanceData({...financeData, fdInterest: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, fdInterest: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bondIncome">Bond Incomes:</Label>
-                  <Input
+                  <Label htmlFor="bondIncome">Bond Income (Annual):</Label>
+                  <CurrencyInput
                     id="bondIncome"
-                    type="number"
                     value={financeData.bondIncome}
-                    onChange={(e) => setFinanceData({...financeData, bondIncome: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, bondIncome: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dividendIncome">Dividend Income:</Label>
-                  <Input
+                  <Label htmlFor="dividendIncome">Dividend Income (Annual):</Label>
+                  <CurrencyInput
                     id="dividendIncome"
-                    type="number"
                     value={financeData.dividendIncome}
-                    onChange={(e) => setFinanceData({...financeData, dividendIncome: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, dividendIncome: val})}
                     className="mt-1"
                   />
                 </div>
@@ -403,7 +396,7 @@ const Cashflow: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Rental Income (3 Properties):</span>
-                  <span className="font-medium">₹{totalRentalIncome.toLocaleString("en-IN")}</span>
+                  <span className="font-medium">₹{(totalRentalIncome * 12).toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>FD Interests:</span>
@@ -435,101 +428,91 @@ const Cashflow: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="monthlyHouseholdExpense">Household Expense:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyHouseholdExpense"
-                    type="number"
                     value={financeData.monthlyHouseholdExpense}
-                    onChange={(e) => setFinanceData({...financeData, monthlyHouseholdExpense: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyHouseholdExpense: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyPpf">PPF Investment:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyPpf"
-                    type="number"
                     value={financeData.monthlyPpf}
-                    onChange={(e) => setFinanceData({...financeData, monthlyPpf: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyPpf: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyUlip">ULIP Investment:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyUlip"
-                    type="number"
                     value={financeData.monthlyUlip}
-                    onChange={(e) => setFinanceData({...financeData, monthlyUlip: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyUlip: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyInsurance">Insurance Premium:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyInsurance"
-                    type="number"
                     value={financeData.monthlyInsurance}
-                    onChange={(e) => setFinanceData({...financeData, monthlyInsurance: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyInsurance: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyRds">RDs Investment:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyRds"
-                    type="number"
                     value={financeData.monthlyRds}
-                    onChange={(e) => setFinanceData({...financeData, monthlyRds: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyRds: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyLoanEMIs">Loan EMIs:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyLoanEMIs"
-                    type="number"
                     value={financeData.monthlyLoanEMIs}
-                    onChange={(e) => setFinanceData({...financeData, monthlyLoanEMIs: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyLoanEMIs: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyDonation">Donation:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyDonation"
-                    type="number"
                     value={financeData.monthlyDonation}
-                    onChange={(e) => setFinanceData({...financeData, monthlyDonation: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyDonation: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyEntertainment">Entertainment:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyEntertainment"
-                    type="number"
                     value={financeData.monthlyEntertainment}
-                    onChange={(e) => setFinanceData({...financeData, monthlyEntertainment: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyEntertainment: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyTravel">Travel:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyTravel"
-                    type="number"
                     value={financeData.monthlyTravel}
-                    onChange={(e) => setFinanceData({...financeData, monthlyTravel: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyTravel: val})}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="monthlyOthers">Others:</Label>
-                  <Input
+                  <CurrencyInput
                     id="monthlyOthers"
-                    type="number"
                     value={financeData.monthlyOthers}
-                    onChange={(e) => setFinanceData({...financeData, monthlyOthers: Number(e.target.value)})}
+                    onChange={(val) => setFinanceData({...financeData, monthlyOthers: val})}
                     className="mt-1"
                   />
                 </div>

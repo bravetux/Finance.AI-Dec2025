@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/resizable";
 import GenericPieChart from "@/components/GenericPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import CurrencyInput from "@/components/CurrencyInput";
 
 type AssetCategory = 'US Stocks' | 'ETF' | 'Custom';
 
@@ -36,7 +35,7 @@ interface USEquityAsset {
   name: string;
   category: AssetCategory;
   usdValue: number;
-  value: number; // This remains INR for compatibility with Net Worth calculator
+  value: number;
 }
 
 const initialAssets: USEquityAsset[] = [];
@@ -60,6 +59,27 @@ const USEquity: React.FC = () => {
     }
   });
 
+  // Listen for storage changes from other components/pages
+  useEffect(() => {
+    const syncData = () => {
+      try {
+        const savedAssets = localStorage.getItem('usEquityData');
+        const savedRate = localStorage.getItem('usdToInrRate');
+        if (savedAssets) setAssets(JSON.parse(savedAssets));
+        if (savedRate) setConversionRate(parseFloat(savedRate));
+      } catch (e) {
+        console.error("Failed to sync US Equity data:", e);
+      }
+    };
+
+    window.addEventListener('storage', syncData);
+    window.addEventListener('focus', syncData);
+    return () => {
+      window.removeEventListener('storage', syncData);
+      window.removeEventListener('focus', syncData);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('usdToInrRate', conversionRate.toString());
   }, [conversionRate]);
@@ -69,7 +89,6 @@ const USEquity: React.FC = () => {
     window.dispatchEvent(new Event('storage'));
   }, [assets]);
 
-  // Update all INR values if conversion rate changes
   const handleRateChange = (newRate: number) => {
     setConversionRate(newRate);
     setAssets(prev => prev.map(asset => ({
@@ -120,7 +139,7 @@ const USEquity: React.FC = () => {
     });
 
     const totalInr = Object.values(allocation).reduce((sum, val) => sum + val, 0);
-    const totalUsd = totalInr / conversionRate;
+    const totalUsd = totalInr / (conversionRate || 1);
     
     const chartData = Object.entries(allocation)
       .map(([name, value]) => ({ name, value }))
@@ -152,15 +171,21 @@ const USEquity: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (data.assets && Array.isArray(data.assets)) {
-          setAssets(data.assets);
-          if (data.conversionRate) setConversionRate(data.conversionRate);
-          showSuccess('Data imported successfully!');
-        } else if (Array.isArray(data)) {
-          setAssets(data);
-          showSuccess('Data imported successfully!');
-        } else {
-          showError('Invalid file format.');
+        
+        // Handle both full object format and plain array format
+        if (data && typeof data === 'object') {
+          if (data.assets && Array.isArray(data.assets)) {
+            setAssets(data.assets);
+            if (data.conversionRate) setConversionRate(data.conversionRate);
+            showSuccess('Data imported successfully!');
+          } else if (Array.isArray(data)) {
+            setAssets(data);
+            showSuccess('Data imported successfully!');
+          } else {
+            // If it's a valid JSON object but missing the specific key, treat as empty
+            setAssets([]);
+            showSuccess('Imported (No US Equity data found)');
+          }
         }
       } catch (err) {
         showError('Failed to parse the file.');

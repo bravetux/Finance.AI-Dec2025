@@ -28,7 +28,6 @@ import {
 import GenericPieChart from "@/components/GenericPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// New interface for individual stocks
 interface Stock {
   id: string;
   stockName: string;
@@ -48,8 +47,28 @@ const DomesticEquity: React.FC = () => {
     }
   });
 
+  // Sync listener
+  useEffect(() => {
+    const syncData = () => {
+      try {
+        const saved = localStorage.getItem('domesticEquityStocks');
+        if (saved) setStocks(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to sync Domestic Equity data:", e);
+      }
+    };
+
+    window.addEventListener('storage', syncData);
+    window.addEventListener('focus', syncData);
+    return () => {
+      window.removeEventListener('storage', syncData);
+      window.removeEventListener('focus', syncData);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('domesticEquityStocks', JSON.stringify(stocks));
+    window.dispatchEvent(new Event('storage'));
   }, [stocks]);
 
   const handleAddRow = () => {
@@ -100,22 +119,6 @@ const DomesticEquity: React.FC = () => {
     return { allocationWithContribution, totalValue, chartData };
   }, [stocks]);
 
-  useEffect(() => {
-    try {
-      const savedNetWorthData = localStorage.getItem('netWorthData');
-      const netWorthData = savedNetWorthData ? JSON.parse(savedNetWorthData) : {};
-      
-      const updatedNetWorthData = {
-        ...netWorthData,
-        domesticStocks: marketCapAllocation.totalValue,
-      };
-
-      localStorage.setItem('netWorthData', JSON.stringify(updatedNetWorthData));
-    } catch (error) {
-      console.error("Failed to update net worth data from Domestic Equity page:", error);
-    }
-  }, [marketCapAllocation.totalValue]);
-
   const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
 
   const exportData = () => {
@@ -132,7 +135,7 @@ const DomesticEquity: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (Array.isArray(data) && data.every(item => 'id' in item && 'stockName' in item && 'category' in item && 'currentValue' in item)) {
+        if (Array.isArray(data)) {
           setStocks(data);
           showSuccess('Stock data imported successfully!');
         } else {

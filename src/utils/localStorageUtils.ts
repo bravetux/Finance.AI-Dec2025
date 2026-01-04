@@ -56,6 +56,11 @@ interface InsurancePolicy {
   type: 'Term' | 'Health' | 'Vehicle' | 'Other';
 }
 
+export interface NetWorthHistoryPoint {
+  date: string; // YYYY-MM
+  value: number;
+}
+
 // Default state objects
 const defaultNetWorthData: NetWorthData = {
   homeValue: 0, otherRealEstate: 0, jewellery: 0, sovereignGoldBonds: 0,
@@ -171,4 +176,25 @@ export const getInsuranceSummary = () => {
   );
 
   return summary;
+};
+
+export const getNetWorthHistory = (): NetWorthHistoryPoint[] => {
+  return safeParseJSON<NetWorthHistoryPoint[]>('netWorthHistory', []);
+};
+
+export const saveNetWorthSnapshot = (value: number) => {
+  const history = getNetWorthHistory();
+  const date = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+  
+  const existingIndex = history.findIndex(p => p.date === date);
+  if (existingIndex !== -1) {
+    history[existingIndex].value = value;
+  } else {
+    history.push({ date, value });
+  }
+  
+  // Keep only last 24 months for performance, but you can increase this
+  const sortedHistory = history.sort((a, b) => a.date.localeCompare(b.date)).slice(-24);
+  localStorage.setItem('netWorthHistory', JSON.stringify(sortedHistory));
+  window.dispatchEvent(new Event('storage'));
 };

@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark, ShieldCheck } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark, ShieldCheck, History, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   getLiquidFutureValueTotal,
   getFinanceData,
@@ -10,8 +11,12 @@ import {
   getFutureValueSummaryData,
   getGoalsData,
   getInsuranceSummary,
-  safeParseJSON, // Import safeParseJSON for specific cases
+  getNetWorthHistory,
+  saveNetWorthSnapshot,
+  NetWorthHistoryPoint,
 } from "@/utils/localStorageUtils";
+import NetWorthTrendChart from "@/components/NetWorthTrendChart";
+import { showSuccess } from "@/utils/toast";
 
 const Dashboard: React.FC = () => {
   const [liquidFutureValue, setLiquidFutureValue] = React.useState(0);
@@ -20,6 +25,16 @@ const Dashboard: React.FC = () => {
   const [futureValueData, setFutureValueData] = React.useState({ totalFutureValue: 0, averageROI: 0, ageAtGoal: 0, duration: 0 });
   const [goalsData, setGoalsData] = React.useState({ totalGoalsFutureValue: 0, totalSipRequired: 0 });
   const [insuranceData, setInsuranceData] = React.useState({ termPremium: 0, termCoverage: 0, healthPremium: 0, healthCoverage: 0 });
+  const [history, setHistory] = React.useState<NetWorthHistoryPoint[]>([]);
+
+  const calculateCurrentNetWorth = () => {
+    const netWorth = getNetWorthData();
+    const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
+    const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
+    const totalAssets = totalIlliquidAssets + totalLiquidAssets;
+    const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
+    return totalAssets - totalLiabilities;
+  };
 
   React.useEffect(() => {
     const updateAllValues = () => {
@@ -55,6 +70,9 @@ const Dashboard: React.FC = () => {
         // Insurance Data
         setInsuranceData(getInsuranceSummary());
 
+        // History Data
+        setHistory(getNetWorthHistory());
+
       } catch (e) {
         console.error("Failed to parse dashboard data from localStorage", e);
       }
@@ -64,6 +82,12 @@ const Dashboard: React.FC = () => {
     window.addEventListener('storage', updateAllValues);
     return () => window.removeEventListener('storage', updateAllValues);
   }, []);
+
+  const handleRecordSnapshot = () => {
+    const currentVal = calculateCurrentNetWorth();
+    saveNetWorthSnapshot(currentVal);
+    showSuccess("Monthly net worth snapshot recorded!");
+  };
 
   const surplusCashFlow = cashflowData.totalAnnualIncome - cashflowData.totalAnnualOutflows;
   const netWorthValue = netWorthData.totalAssets - netWorthData.totalLiabilities;
@@ -160,29 +184,51 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        <Card className="border-l-4 border-cyan-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5 text-cyan-500" />Cashflow Summary</CardTitle>
+      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
+        {/* Net Worth Trend Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" />Net Worth Trend</CardTitle>
+              <CardDescription>Visualizing your wealth growth over the last 24 months.</CardDescription>
+            </div>
+            <Button size="sm" variant="outline" className="gap-2" onClick={handleRecordSnapshot}>
+              <PlusCircle className="h-4 w-4" />
+              Record Snapshot
+            </Button>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between"><span>Total Annual Income:</span><span className="font-medium">₹{cashflowData.totalAnnualIncome.toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between"><span>Total Annual Outflows:</span><span className="font-medium">₹{cashflowData.totalAnnualOutflows.toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between border-t pt-2"><span className="font-bold">Surplus Cash Flow:</span><span className={`font-bold ${surplusCashFlow < 0 ? "text-red-500" : "text-green-500"}`}>₹{surplusCashFlow.toLocaleString("en-IN")}</span></div>
+          <CardContent>
+            <NetWorthTrendChart data={history} />
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-amber-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-amber-500" />Net Worth Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between"><span>Total Assets:</span><span className="font-medium">₹{netWorthData.totalAssets.toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between"><span>Total Liabilities:</span><span className="font-medium">₹{netWorthData.totalLiabilities.toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between border-t pt-2"><span className="font-bold">Net Worth:</span><span className={`font-bold ${netWorthValue < 0 ? "text-red-500" : "text-green-500"}`}>₹{netWorthValue.toLocaleString("en-IN")}</span></div>
-          </CardContent>
-        </Card>
+        {/* Small Summary column */}
+        <div className="grid gap-4">
+          <Card className="border-l-4 border-cyan-500">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><BarChart2 className="h-4 w-4 text-cyan-500" />Cashflow</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-1 text-sm">
+              <div className="flex justify-between"><span>Income:</span><span>₹{cashflowData.totalAnnualIncome.toLocaleString("en-IN")}</span></div>
+              <div className="flex justify-between"><span>Outflow:</span><span>₹{cashflowData.totalAnnualOutflows.toLocaleString("en-IN")}</span></div>
+              <div className="flex justify-between border-t pt-1 font-bold"><span>Surplus:</span><span className={surplusCashFlow < 0 ? "text-red-500" : "text-green-600"}>₹{surplusCashFlow.toLocaleString("en-IN")}</span></div>
+            </CardContent>
+          </Card>
 
+          <Card className="border-l-4 border-amber-500">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><PieChart className="h-4 w-4 text-amber-500" />Net Worth</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-1 text-sm">
+              <div className="flex justify-between"><span>Assets:</span><span>₹{netWorthData.totalAssets.toLocaleString("en-IN")}</span></div>
+              <div className="flex justify-between"><span>Liabilities:</span><span>₹{netWorthData.totalLiabilities.toLocaleString("en-IN")}</span></div>
+              <div className="flex justify-between border-t pt-1 font-bold"><span>Total:</span><span>₹{netWorthValue.toLocaleString("en-IN")}</span></div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-violet-500">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-violet-500" />Future Value Summary</CardTitle>
@@ -213,7 +259,6 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* New Insurance Summary Card */}
         <Card className="border-l-4 border-indigo-500">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-indigo-500" />Insurance Summary</CardTitle>

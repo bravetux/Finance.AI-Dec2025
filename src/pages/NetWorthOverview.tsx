@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { History, PlusCircle, Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { History, PlusCircle, Wallet, TrendingUp, TrendingDown, PieChart as PieChartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getNetWorthData,
@@ -11,19 +11,40 @@ import {
   NetWorthHistoryPoint,
 } from "@/utils/localStorageUtils";
 import NetWorthTrendChart from "@/components/NetWorthTrendChart";
+import GenericPieChart from "@/components/GenericPieChart";
 import { showSuccess } from "@/utils/toast";
 
 const NetWorthOverview: React.FC = () => {
   const [history, setHistory] = React.useState<NetWorthHistoryPoint[]>([]);
   const [netWorthSummary, setNetWorthSummary] = React.useState({ assets: 0, liabilities: 0, netWorth: 0 });
+  const [allocationData, setAllocationData] = React.useState<{ name: string; value: number }[]>([]);
 
   const getCurrentSnapshotData = () => {
     const netWorth = getNetWorthData();
+    
+    // Categorize for Allocation Chart
+    const realEstate = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.reits || 0);
+    const equity = (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0);
+    const debtCash = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.savingsBalance || 0);
+    const preciousMetals = (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.preciousMetals || 0);
+    const retirement = (netWorth.epfPpfVpf || 0) + (netWorth.ulipsSurrenderValue || 0);
+    const crypto = (netWorth.cryptocurrency || 0);
+
+    const allocation = [
+      { name: "Real Estate", value: realEstate },
+      { name: "Equity", value: equity },
+      { name: "Debt & Cash", value: debtCash },
+      { name: "Precious Metals", value: preciousMetals },
+      { name: "Retirement/ULIP", value: retirement },
+      { name: "Crypto", value: crypto },
+    ].filter(item => item.value > 0);
+
     const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
     const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
     const totalAssets = totalIlliquidAssets + totalLiquidAssets;
     const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
-    return { totalAssets, totalLiabilities, netWorth: totalAssets - totalLiabilities };
+    
+    return { totalAssets, totalLiabilities, netWorth: totalAssets - totalLiabilities, allocation };
   };
 
   React.useEffect(() => {
@@ -35,6 +56,7 @@ const NetWorthOverview: React.FC = () => {
         liabilities: snapshot.totalLiabilities, 
         netWorth: snapshot.netWorth 
       });
+      setAllocationData(snapshot.allocation);
     };
 
     updateValues();
@@ -90,18 +112,33 @@ const NetWorthOverview: React.FC = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
-            Growth Trend
-          </CardTitle>
-          <CardDescription>Historical view of your assets and liabilities over the last 24 months.</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <NetWorthTrendChart data={history} />
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Growth Trend
+            </CardTitle>
+            <CardDescription>Historical view of your assets and liabilities over the last 24 months.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <NetWorthTrendChart data={history} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" />
+              Asset Allocation
+            </CardTitle>
+            <CardDescription>Distribution of your wealth across major asset classes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GenericPieChart data={allocationData} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

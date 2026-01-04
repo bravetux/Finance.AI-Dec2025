@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Landmark, Upload, Download, Trash2, PlusCircle } from "lucide-react";
 import { saveAs } from "file-saver";
 import { showSuccess, showError } from "@/utils/toast";
-import CurrencyInput from "@/components/CurrencyInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,37 +21,23 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import GenericPieChart from "@/components/GenericPieChart";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type AssetCategory = 'US Stocks' | 'ETF' | 'Custom';
 
 interface USEquityAsset {
   id: string;
   name: string;
-  type: string;
+  category: AssetCategory;
   value: number;
 }
 
-const initialAssets: USEquityAsset[] = [
-  { id: '1', name: 'US Stocks', type: 'US Stocks', value: 0 },
-  { id: '2', name: 'S&P 500 ETF', type: 'ETF', value: 0 },
-];
+const initialAssets: USEquityAsset[] = [];
 
 const USEquity: React.FC = () => {
   const [assets, setAssets] = useState<USEquityAsset[]>(() => {
@@ -64,62 +49,55 @@ const USEquity: React.FC = () => {
     }
   });
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newAsset, setNewAsset] = useState<{ name: string; type: string; value: number }>({
-    name: "",
-    type: "US Stocks",
-    value: 0,
-  });
-
   useEffect(() => {
     localStorage.setItem('usEquityData', JSON.stringify(assets));
-    // Trigger storage event for other components like NetWorthCalculator
     window.dispatchEvent(new Event('storage'));
   }, [assets]);
 
-  const handleValueChange = (id: string, value: number) => {
+  const handleAddRow = () => {
+    const newAsset: USEquityAsset = {
+      id: Date.now().toString(),
+      name: '',
+      category: 'US Stocks',
+      value: 0,
+    };
+    setAssets(prev => [...prev, newAsset]);
+  };
+
+  const handleDeleteRow = (id: string) => {
+    setAssets(prev => prev.filter(asset => asset.id !== id));
+  };
+
+  const handleAssetChange = (id: string, field: keyof USEquityAsset, value: string | number) => {
     setAssets(prev =>
-      prev.map(p => (p.id === id ? { ...p, value } : p))
+      prev.map(asset => (asset.id === id ? { ...asset, [field]: value } : asset))
     );
   };
 
-  const handleAddAsset = () => {
-    const finalName = newAsset.type === "Custom" ? newAsset.name : newAsset.type;
-    
-    if (newAsset.type === "Custom" && !newAsset.name) {
-      showError("Please provide a name for the custom asset.");
-      return;
-    }
-
-    const asset: USEquityAsset = {
-      id: Date.now().toString(),
-      name: finalName,
-      type: newAsset.type,
-      value: newAsset.value,
+  const allocationSummary = useMemo(() => {
+    const allocation: { [key in AssetCategory]: number } = {
+      'US Stocks': 0,
+      'ETF': 0,
+      'Custom': 0,
     };
 
-    setAssets(prev => [...prev, asset]);
-    setIsDialogOpen(false);
-    setNewAsset({ name: "", type: "US Stocks", value: 0 });
-    showSuccess("Asset added successfully!");
-  };
+    assets.forEach(asset => {
+      allocation[asset.category] += asset.value;
+    });
 
-  const handleDeleteAsset = (id: string) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
-    showSuccess("Asset removed.");
-  };
+    const totalValue = Object.values(allocation).reduce((sum, val) => sum + val, 0);
+    
+    const chartData = Object.entries(allocation)
+      .map(([name, value]) => ({ name, value }))
+      .filter(item => item.value > 0);
+    
+    const allocationWithContribution = Object.entries(allocation).map(([name, value]) => ({
+      name,
+      value,
+      contribution: totalValue > 0 ? (value / totalValue) * 100 : 0,
+    }));
 
-  const totalValue = useMemo(() => {
-    return assets.reduce((sum, p) => sum + p.value, 0);
-  }, [assets]);
-
-  const chartData = useMemo(() => {
-    return assets
-      .filter(p => p.value > 0)
-      .map(p => ({
-        name: p.name,
-        value: p.value,
-      }));
+    return { allocationWithContribution, totalValue, chartData };
   }, [assets]);
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
@@ -154,7 +132,7 @@ const USEquity: React.FC = () => {
 
   const handleClearData = () => {
     setAssets([]);
-    showSuccess('US Equity data has been cleared.');
+    showSuccess('All US Equity data has been cleared.');
   };
 
   return (
@@ -175,7 +153,7 @@ const USEquity: React.FC = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will reset all data on this page. This action cannot be undone.
+                  This will delete all asset entries on this page. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -193,138 +171,138 @@ const USEquity: React.FC = () => {
               <Input id="import-file" type="file" accept=".json" className="hidden" onChange={importData} />
             </Label>
           </Button>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-            <PlusCircle className="h-4 w-4" /> Add Asset
-          </Button>
         </div>
       </div>
 
-      <ResizablePanelGroup
-        direction="horizontal"
-        className="min-h-[400px] w-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={60}>
-          <Card className="h-full border-0 shadow-none rounded-none">
-            <CardHeader>
-              <CardTitle>US Equity Holdings</CardTitle>
-            </CardHeader>
-            <CardContent>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>US Holdings</CardTitle>
+            <CardDescription>Track your international investments in US stocks and ETFs.</CardDescription>
+          </div>
+          <Button onClick={handleAddRow}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Asset
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[5%] py-1 px-1">S.No</TableHead>
+                  <TableHead className="py-1 px-1">Asset Name</TableHead>
+                  <TableHead className="py-1 px-1">Category</TableHead>
+                  <TableHead className="py-1 px-1">Current Value (INR)</TableHead>
+                  <TableHead className="text-right py-1 px-1">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assets.length > 0 ? assets.map((asset, index) => (
+                  <TableRow key={asset.id} className="h-9">
+                    <TableCell className="py-0 px-1 align-middle text-xs">{index + 1}</TableCell>
+                    <TableCell className="p-0">
+                      <Input
+                        value={asset.name}
+                        onChange={e => handleAssetChange(asset.id, 'name', e.target.value)}
+                        placeholder="Enter asset name"
+                        className="bg-transparent border-0 focus-visible:ring-0 h-7 text-sm"
+                      />
+                    </TableCell>
+                    <TableCell className="p-0">
+                      <Select
+                        value={asset.category}
+                        onValueChange={(value: AssetCategory) => handleAssetChange(asset.id, 'category', value)}
+                      >
+                        <SelectTrigger className="bg-transparent border-0 focus:ring-0 h-7 w-full text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="US Stocks">US Stocks</SelectItem>
+                          <SelectItem value="ETF">ETF</SelectItem>
+                          <SelectItem value="Custom">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="p-0">
+                      <Input
+                        type="text"
+                        value={asset.value.toLocaleString('en-IN')}
+                        onChange={e => {
+                          const numericValue = Number(e.target.value.replace(/,/g, ''));
+                          if (!isNaN(numericValue)) {
+                            handleAssetChange(asset.id, 'value', numericValue);
+                          }
+                        }}
+                        className="bg-transparent border-0 focus-visible:ring-0 h-7 text-sm"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right py-0 px-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(asset.id)} className="h-7 w-7">
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-20 text-muted-foreground text-sm">
+                      No assets added yet. Click "Add Asset" to begin.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow className="bg-muted/50 font-bold">
+                  <TableCell colSpan={3} className="py-1 px-1 text-sm">Total Portfolio Value</TableCell>
+                  <TableCell className="text-right py-1 px-1 text-sm">{formatCurrency(allocationSummary.totalValue)}</TableCell>
+                  <TableCell className="py-1 px-1" />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Asset Allocation Summary</CardTitle>
+          <CardDescription>Breakdown of your US portfolio by category.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResizablePanelGroup direction="horizontal" className="min-h-[300px] w-full">
+            <ResizablePanel defaultSize={50}>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Asset Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Value (INR)</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="py-1 px-1">Category</TableHead>
+                    <TableHead className="text-right py-1 px-1">Value (INR)</TableHead>
+                    <TableHead className="text-right py-1 px-1">Contribution</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assets.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{p.type}</TableCell>
-                      <TableCell className="p-1">
-                        <CurrencyInput
-                          value={p.value}
-                          onChange={val => handleValueChange(p.id, val)}
-                          className="w-full text-right bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-offset-0 h-9"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-400 hover:text-red-500 hover:bg-red-50"
-                          onClick={() => handleDeleteAsset(p.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                  {allocationSummary.allocationWithContribution.map(item => (
+                    <TableRow key={item.name} className="h-9">
+                      <TableCell className="font-medium py-0 px-1 text-sm">{item.name}</TableCell>
+                      <TableCell className="text-right py-0 px-1 text-sm">{formatCurrency(item.value)}</TableCell>
+                      <TableCell className="text-right py-0 px-1 text-sm">{item.contribution.toFixed(2)}%</TableCell>
                     </TableRow>
                   ))}
-                  {assets.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        No holdings added. Click "Add Asset" to start.
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
                 <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={2} className="font-bold">Total</TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(totalValue)}</TableCell>
-                    <TableCell></TableCell>
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell className="py-1 px-1 text-sm">Total</TableCell>
+                    <TableCell className="font-bold text-right py-1 px-1 text-sm">{formatCurrency(allocationSummary.totalValue)}</TableCell>
+                    <TableCell className="font-bold text-right py-1 px-1 text-sm">100.00%</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
-            </CardContent>
-          </Card>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={40}>
-          <Card className="h-full border-0 shadow-none rounded-none">
-            <CardHeader>
-              <CardTitle>Asset Allocation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <GenericPieChart data={chartData} />
-            </CardContent>
-          </Card>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-
-      {/* Add Asset Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add US Equity Holding</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Asset Type</Label>
-              <Select 
-                value={newAsset.type} 
-                onValueChange={(val) => setNewAsset({ ...newAsset, type: val, name: val === "Custom" ? "" : val })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US Stocks">US Stocks</SelectItem>
-                  <SelectItem value="ETF">ETF</SelectItem>
-                  <SelectItem value="Custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {newAsset.type === "Custom" && (
-              <div className="grid gap-2">
-                <Label htmlFor="custom-name">Custom Name</Label>
-                <Input
-                  id="custom-name"
-                  placeholder="e.g., NASDAQ 100 Index"
-                  value={newAsset.name}
-                  onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                />
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label htmlFor="asset-value">Current Value (INR)</Label>
-              <CurrencyInput
-                id="asset-value"
-                value={newAsset.value}
-                onChange={(val) => setNewAsset({ ...newAsset, value: val })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddAsset}>Add Holding</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50}>
+              <GenericPieChart data={allocationSummary.chartData} />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +18,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import LoanCard from "@/components/LoanCard";
 
 type LoanCategory = 'Home' | 'Education' | 'Car' | 'Personal' | 'Credit Card' | 'Other';
 
@@ -32,6 +38,7 @@ interface Loan {
   amountPaid: number;
   interestRate: number;
   emi: number;
+  nextPaymentDate: string;
 }
 
 const initialLoans: Loan[] = [];
@@ -46,41 +53,65 @@ const LoanTracker: React.FC = () => {
     }
   });
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const [formData, setFormData] = useState<Partial<Loan>>({});
+
   useEffect(() => {
     localStorage.setItem('loanTrackerData', JSON.stringify(loans));
-    window.dispatchEvent(new Event('storage')); // Notify other components of the change
+    window.dispatchEvent(new Event('storage'));
   }, [loans]);
 
-  const handleAddRow = () => {
-    const newLoan: Loan = {
-      id: Date.now().toString(),
-      name: '',
-      category: 'Other',
-      totalAmount: 0,
-      amountPaid: 0,
-      interestRate: 0,
-      emi: 0,
-    };
-    setLoans(prev => [...prev, newLoan]);
+  const handleOpenDialog = (loan?: Loan) => {
+    if (loan) {
+      setEditingLoan(loan);
+      setFormData(loan);
+    } else {
+      setEditingLoan(null);
+      setFormData({
+        category: 'Other',
+        totalAmount: 0,
+        amountPaid: 0,
+        interestRate: 0,
+        emi: 0,
+        nextPaymentDate: new Date().toISOString().split('T')[0]
+      });
+    }
+    setIsDialogOpen(true);
   };
 
-  const handleDeleteRow = (id: string) => {
+  const handleSave = () => {
+    if (!formData.name) {
+      showError("Please enter a loan name.");
+      return;
+    }
+
+    if (editingLoan) {
+      setLoans(prev => prev.map(l => l.id === editingLoan.id ? { ...l, ...formData } as Loan : l));
+      showSuccess("Loan updated successfully!");
+    } else {
+      const newLoan: Loan = {
+        ...formData,
+        id: Date.now().toString(),
+      } as Loan;
+      setLoans(prev => [...prev, newLoan]);
+      showSuccess("Loan added successfully!");
+    }
+    setIsDialogOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
     setLoans(prev => prev.filter(loan => loan.id !== id));
-  };
-
-  const handleLoanChange = (id: string, field: keyof Loan, value: string | number) => {
-    setLoans(prev =>
-      prev.map(loan => (loan.id === id ? { ...loan, [field]: value } : loan))
-    );
+    showSuccess("Loan removed.");
   };
 
   const totals = useMemo(() => {
     return loans.reduce(
       (acc, loan) => {
-        acc.totalAmount += loan.totalAmount;
-        acc.amountPaid += loan.amountPaid;
-        acc.remainingPrincipal += (loan.totalAmount - loan.amountPaid);
-        acc.totalEmi += loan.emi;
+        acc.totalAmount += (loan.totalAmount || 0);
+        acc.amountPaid += (loan.amountPaid || 0);
+        acc.remainingPrincipal += ((loan.totalAmount || 0) - (loan.amountPaid || 0));
+        acc.totalEmi += (loan.emi || 0);
         return acc;
       },
       { totalAmount: 0, amountPaid: 0, remainingPrincipal: 0, totalEmi: 0 }
@@ -103,9 +134,8 @@ const LoanTracker: React.FC = () => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        if (Array.isArray(data) && data.every(item => 'id' in item && 'name' in item && 'totalAmount' in item)) {
-          const importedLoans = data.map(loan => ({ ...loan, category: loan.category || 'Other' }));
-          setLoans(importedLoans);
+        if (Array.isArray(data)) {
+          setLoans(data);
           showSuccess('Loan data imported successfully!');
         } else {
           showError('Invalid file format.');
@@ -125,15 +155,20 @@ const LoanTracker: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <HandCoins className="h-8 w-8" />
-          Loan & Liability Tracker
-        </h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <HandCoins className="h-8 w-8 text-primary" />
+            Loan & Liability Tracker
+          </h1>
+          <p className="text-muted-foreground mt-1">Manage and track your outstanding debts and EMIs.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4" /> Clear Data</Button>
+              <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" /> Clear
+              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -142,85 +177,154 @@ const LoanTracker: React.FC = () => {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearData}>Yes, clear data</AlertDialogAction>
+                <AlertDialogAction onClick={handleClearData} className="bg-red-500 hover:bg-red-600">Yes, clear data</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button variant="outline" onClick={exportData}><Upload className="mr-2 h-4 w-4" /> Export</Button>
-          <Button variant="outline" asChild>
-            <Label htmlFor="import-file" className="cursor-pointer"><Download className="mr-2 h-4 w-4" /> Import<Input id="import-file" type="file" accept=".json" className="hidden" onChange={importData} /></Label>
+          <Button variant="outline" size="sm" onClick={exportData}><Upload className="mr-2 h-4 w-4" /> Export</Button>
+          <Button variant="outline" size="sm" asChild>
+            <Label htmlFor="import-file" className="cursor-pointer">
+              <Download className="mr-2 h-4 w-4" /> Import
+              <Input id="import-file" type="file" accept=".json" className="hidden" onChange={importData} />
+            </Label>
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="gap-2">
+            <PlusCircle className="h-4 w-4" /> Add Loan
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Your Loans</CardTitle>
-            <CardDescription>Track all your outstanding loans and liabilities. This data will automatically update the Net Worth page.</CardDescription>
+      {/* Summary Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="bg-card p-4 rounded-lg border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Total Loans</p>
+          <p className="text-2xl font-bold text-foreground">{loans.length}</p>
+        </div>
+        <div className="bg-card p-4 rounded-lg border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Total Outstanding</p>
+          <p className="text-2xl font-bold text-red-500">{formatCurrency(totals.remainingPrincipal)}</p>
+        </div>
+        <div className="bg-card p-4 rounded-lg border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Monthly EMI Commitment</p>
+          <p className="text-2xl font-bold text-primary">{formatCurrency(totals.totalEmi)}</p>
+        </div>
+        <div className="bg-card p-4 rounded-lg border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Total Repaid</p>
+          <p className="text-2xl font-bold text-emerald-500">{formatCurrency(totals.amountPaid)}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {loans.length > 0 ? (
+          loans.map(loan => (
+            <LoanCard 
+              key={loan.id} 
+              loan={loan} 
+              onEdit={handleOpenDialog} 
+              onDelete={handleDelete} 
+            />
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center border-2 border-dashed rounded-xl">
+            <HandCoins className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-lg">No loans tracked yet.</p>
+            <Button variant="link" onClick={() => handleOpenDialog()}>Add your first loan</Button>
           </div>
-          <Button onClick={handleAddRow}><PlusCircle className="mr-2 h-4 w-4" /> Add Loan</Button>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Loan Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Total Amount</TableHead>
-                  <TableHead>Amount Paid</TableHead>
-                  <TableHead>Remaining</TableHead>
-                  <TableHead>Interest Rate (%)</TableHead>
-                  <TableHead>EMI</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loans.length > 0 ? loans.map(loan => (
-                  <TableRow key={loan.id}>
-                    <TableCell className="p-1"><Input value={loan.name} onChange={e => handleLoanChange(loan.id, 'name', e.target.value)} placeholder="e.g., HDFC Home Loan" className="bg-transparent border-0 focus-visible:ring-1 h-8" /></TableCell>
-                    <TableCell className="p-1">
-                      <Select value={loan.category} onValueChange={(value: LoanCategory) => handleLoanChange(loan.id, 'category', value)}>
-                        <SelectTrigger className="bg-transparent border-0 focus-visible:ring-1 h-8 w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Home">Home</SelectItem>
-                          <SelectItem value="Education">Education</SelectItem>
-                          <SelectItem value="Car">Car</SelectItem>
-                          <SelectItem value="Personal">Personal</SelectItem>
-                          <SelectItem value="Credit Card">Credit Card</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="p-1"><Input type="text" value={loan.totalAmount.toLocaleString('en-IN')} onChange={e => handleLoanChange(loan.id, 'totalAmount', Number(e.target.value.replace(/,/g, '')))} className="bg-transparent border-0 focus-visible:ring-1 h-8" /></TableCell>
-                    <TableCell className="p-1"><Input type="text" value={loan.amountPaid.toLocaleString('en-IN')} onChange={e => handleLoanChange(loan.id, 'amountPaid', Number(e.target.value.replace(/,/g, '')))} className="bg-transparent border-0 focus-visible:ring-1 h-8" /></TableCell>
-                    <TableCell>{formatCurrency(loan.totalAmount - loan.amountPaid)}</TableCell>
-                    <TableCell className="p-1"><Input type="number" value={loan.interestRate} onChange={e => handleLoanChange(loan.id, 'interestRate', e.target.value)} className="bg-transparent border-0 focus-visible:ring-1 h-8 w-20" /></TableCell>
-                    <TableCell className="p-1"><Input type="text" value={loan.emi.toLocaleString('en-IN')} onChange={e => handleLoanChange(loan.id, 'emi', Number(e.target.value.replace(/,/g, '')))} className="bg-transparent border-0 focus-visible:ring-1 h-8" /></TableCell>
-                    <TableCell className="text-right p-1"><Button variant="ghost" size="icon" onClick={() => handleDeleteRow(loan.id)} className="h-8 w-8"><Trash2 className="h-4 w-4 text-red-500" /></Button></TableCell>
-                  </TableRow>
-                )) : (
-                  <TableRow><TableCell colSpan={8} className="text-center h-24 text-muted-foreground">No loans added yet.</TableCell></TableRow>
-                )}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="bg-muted/50 font-bold">
-                  <TableCell colSpan={2}>Total</TableCell>
-                  <TableCell>{formatCurrency(totals.totalAmount)}</TableCell>
-                  <TableCell>{formatCurrency(totals.amountPaid)}</TableCell>
-                  <TableCell>{formatCurrency(totals.remainingPrincipal)}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell>{formatCurrency(totals.totalEmi)}</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+        )}
+      </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingLoan ? 'Edit Loan' : 'Add New Loan'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Loan Name</Label>
+              <Input 
+                id="name" 
+                value={formData.name || ''} 
+                onChange={e => setFormData({ ...formData, name: e.target.value })} 
+                placeholder="e.g., HDFC Home Loan"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value: LoanCategory) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Home">Home Loan</SelectItem>
+                  <SelectItem value="Education">Education Loan</SelectItem>
+                  <SelectItem value="Car">Car Loan</SelectItem>
+                  <SelectItem value="Personal">Personal Loan</SelectItem>
+                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="total">Total Amount</Label>
+                <Input 
+                  id="total" 
+                  type="number"
+                  value={formData.totalAmount || 0} 
+                  onChange={e => setFormData({ ...formData, totalAmount: Number(e.target.value) })} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="paid">Amount Paid</Label>
+                <Input 
+                  id="paid" 
+                  type="number"
+                  value={formData.amountPaid || 0} 
+                  onChange={e => setFormData({ ...formData, amountPaid: Number(e.target.value) })} 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="rate">Interest Rate (%)</Label>
+                <Input 
+                  id="rate" 
+                  type="number"
+                  step="0.1"
+                  value={formData.interestRate || 0} 
+                  onChange={e => setFormData({ ...formData, interestRate: Number(e.target.value) })} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="emi">Monthly EMI</Label>
+                <Input 
+                  id="emi" 
+                  type="number"
+                  value={formData.emi || 0} 
+                  onChange={e => setFormData({ ...formData, emi: Number(e.target.value) })} 
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="nextDate">Next Payment Date</Label>
+              <Input 
+                id="nextDate" 
+                type="date"
+                value={formData.nextPaymentDate || ''} 
+                onChange={e => setFormData({ ...formData, nextPaymentDate: e.target.value })} 
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

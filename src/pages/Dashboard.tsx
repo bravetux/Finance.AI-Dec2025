@@ -2,8 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark, ShieldCheck, History, PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { IndianRupee, TrendingUp, Wallet, BarChart2, PieChart, Target, Landmark, ShieldCheck } from "lucide-react";
 import {
   getLiquidFutureValueTotal,
   getFinanceData,
@@ -11,12 +10,7 @@ import {
   getFutureValueSummaryData,
   getGoalsData,
   getInsuranceSummary,
-  getNetWorthHistory,
-  saveNetWorthSnapshot,
-  NetWorthHistoryPoint,
 } from "@/utils/localStorageUtils";
-import NetWorthTrendChart from "@/components/NetWorthTrendChart";
-import { showSuccess } from "@/utils/toast";
 
 const Dashboard: React.FC = () => {
   const [liquidFutureValue, setLiquidFutureValue] = React.useState(0);
@@ -25,49 +19,33 @@ const Dashboard: React.FC = () => {
   const [futureValueData, setFutureValueData] = React.useState({ totalFutureValue: 0, averageROI: 0, ageAtGoal: 0, duration: 0 });
   const [goalsData, setGoalsData] = React.useState({ totalGoalsFutureValue: 0, totalSipRequired: 0 });
   const [insuranceData, setInsuranceData] = React.useState({ termPremium: 0, termCoverage: 0, healthPremium: 0, healthCoverage: 0 });
-  const [history, setHistory] = React.useState<NetWorthHistoryPoint[]>([]);
-
-  const getCurrentSnapshotData = () => {
-    const netWorth = getNetWorthData();
-    const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
-    const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
-    const totalAssets = totalIlliquidAssets + totalLiquidAssets;
-    const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
-    return { totalAssets, totalLiabilities };
-  };
 
   React.useEffect(() => {
     const updateAllValues = () => {
       try {
-        // Liquid Future Value
         setLiquidFutureValue(getLiquidFutureValueTotal());
 
-        // Cashflow Data
         const cashflow = getFinanceData();
         const totalRentalIncome = (cashflow.rentalProperty1 || 0) + (cashflow.rentalProperty2 || 0) + (cashflow.rentalProperty3 || 0);
         const totalAnnualIncome = (cashflow.postTaxSalaryIncome || 0) + (cashflow.businessIncome || 0) + totalRentalIncome + (cashflow.fdInterest || 0) + (cashflow.bondIncome || 0) + (cashflow.dividendIncome || 0);
         const totalAnnualOutflows = ((cashflow.monthlyHouseholdExpense || 0) + (cashflow.monthlyPpf || 0) + (cashflow.monthlyUlip || 0) + (cashflow.monthlyInsurance || 0) + (cashflow.monthlyRds || 0) + (cashflow.monthlyLoanEMIs || 0) + (cashflow.monthlyDonation || 0) + (cashflow.monthlyEntertainment || 0) + (cashflow.monthlyTravel || 0) + (cashflow.monthlyOthers || 0)) * 12;
         setCashflowData({ totalAnnualIncome, totalAnnualOutflows });
 
-        // Net Worth Data
-        const snapshot = getCurrentSnapshotData();
-        setNetWorthData(snapshot);
+        const netWorth = getNetWorthData();
+        const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
+        const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
+        const totalAssets = totalIlliquidAssets + totalLiquidAssets;
+        const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
+        setNetWorthData({ totalAssets, totalLiabilities });
 
-        // Future Value Data
-        const fvSummary = getFutureValueSummaryData();
-        setFutureValueData(fvSummary);
+        setFutureValueData(getFutureValueSummaryData());
 
-        // Goals Data
         const goals = getGoalsData();
         const totalGoalsFv = goals.reduce((sum: number, goal: any) => sum + (goal.targetFutureValue || 0), 0);
         const totalSip = goals.reduce((sum: number, goal: any) => sum + (goal.sipRequired || 0), 0);
         setGoalsData({ totalGoalsFutureValue: totalGoalsFv, totalSipRequired: totalSip });
 
-        // Insurance Data
         setInsuranceData(getInsuranceSummary());
-
-        // History Data
-        setHistory(getNetWorthHistory());
 
       } catch (e) {
         console.error("Failed to parse dashboard data from localStorage", e);
@@ -78,12 +56,6 @@ const Dashboard: React.FC = () => {
     window.addEventListener('storage', updateAllValues);
     return () => window.removeEventListener('storage', updateAllValues);
   }, []);
-
-  const handleRecordSnapshot = () => {
-    const { totalAssets, totalLiabilities } = getCurrentSnapshotData();
-    saveNetWorthSnapshot(totalAssets, totalLiabilities);
-    showSuccess("Monthly net worth snapshot recorded!");
-  };
 
   const surplusCashFlow = cashflowData.totalAnnualIncome - cashflowData.totalAnnualOutflows;
   const netWorthValue = netWorthData.totalAssets - netWorthData.totalLiabilities;
@@ -103,9 +75,6 @@ const Dashboard: React.FC = () => {
       goalCoverageMessage = "Goal is poorly covered, Might affect Retirement";
       goalCoverageColor = "text-red-500";
     }
-  } else if (goalsData.totalGoalsFutureValue > 0) {
-    goalCoverageMessage = "Calculate Future Value of assets to assess goal coverage.";
-    goalCoverageColor = "text-yellow-500";
   }
 
   let sipSufficiencyMessage = "";
@@ -113,10 +82,10 @@ const Dashboard: React.FC = () => {
   const monthlySurplus = surplusCashFlow / 12;
   if (goalsData.totalSipRequired > 0) {
     if (goalsData.totalSipRequired > monthlySurplus) {
-      sipSufficiencyMessage = "Funds not sufficient to do SIP, Rework your Goal and Expenses";
+      sipSufficiencyMessage = "Funds not sufficient to do SIP";
       sipSufficiencyColor = "text-red-500";
     } else {
-      sipSufficiencyMessage = "Funds are sufficient to Achieve Goals";
+      sipSufficiencyMessage = "Funds are sufficient for SIPs";
       sipSufficiencyColor = "text-green-600";
     }
   }
@@ -137,7 +106,6 @@ const Dashboard: React.FC = () => {
             <div className={`text-2xl font-bold ${surplusCashFlow < 0 ? "text-red-500" : "text-green-600"}`}>
               ₹{surplusCashFlow.toLocaleString("en-IN")}
             </div>
-            <p className="text-xs text-muted-foreground">From Cashflow</p>
           </CardContent>
         </Card>
         <Card className="bg-blue-50 dark:bg-blue-950">
@@ -146,10 +114,9 @@ const Dashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${netWorthValue < 0 ? "text-red-500" : "text-blue-600 dark:text-blue-400"}`}>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               ₹{netWorthValue.toLocaleString("en-IN")}
             </div>
-            <p className="text-xs text-muted-foreground">From Net Worth</p>
           </CardContent>
         </Card>
         <Card className="bg-purple-50 dark:bg-purple-950">
@@ -161,9 +128,6 @@ const Dashboard: React.FC = () => {
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               ₹{futureValueData.totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              over {futureValueData.duration} years (Avg. ROI: {futureValueData.averageROI.toFixed(2)}%)
-            </p>
           </CardContent>
         </Card>
         <Card className="bg-indigo-50 dark:bg-indigo-950">
@@ -175,103 +139,62 @@ const Dashboard: React.FC = () => {
             <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
               ₹{liquidFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">Excludes real estate & jewellery</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-        {/* Net Worth Trend Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" />Net Worth Trend</CardTitle>
-              <CardDescription>Visualizing your wealth growth over the last 24 months.</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" className="gap-2" onClick={handleRecordSnapshot}>
-              <PlusCircle className="h-4 w-4" />
-              Record Snapshot
-            </Button>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-l-4 border-cyan-500">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><BarChart2 className="h-4 w-4 text-cyan-500" />Cashflow Summary</CardTitle>
           </CardHeader>
-          <CardContent>
-            <NetWorthTrendChart data={history} />
+          <CardContent className="p-4 pt-0 space-y-1 text-sm">
+            <div className="flex justify-between"><span>Annual Income:</span><span>₹{cashflowData.totalAnnualIncome.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span>Annual Outflow:</span><span>₹{cashflowData.totalAnnualOutflows.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between border-t pt-1 font-bold"><span>Annual Surplus:</span><span className={surplusCashFlow < 0 ? "text-red-500" : "text-green-600"}>₹{surplusCashFlow.toLocaleString("en-IN")}</span></div>
           </CardContent>
         </Card>
 
-        {/* Small Summary column */}
-        <div className="grid gap-4">
-          <Card className="border-l-4 border-cyan-500">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><BarChart2 className="h-4 w-4 text-cyan-500" />Cashflow</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 space-y-1 text-sm">
-              <div className="flex justify-between"><span>Income:</span><span>₹{cashflowData.totalAnnualIncome.toLocaleString("en-IN")}</span></div>
-              <div className="flex justify-between"><span>Outflow:</span><span>₹{cashflowData.totalAnnualOutflows.toLocaleString("en-IN")}</span></div>
-              <div className="flex justify-between border-t pt-1 font-bold"><span>Surplus:</span><span className={surplusCashFlow < 0 ? "text-red-500" : "text-green-600"}>₹{surplusCashFlow.toLocaleString("en-IN")}</span></div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-amber-500">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><PieChart className="h-4 w-4 text-amber-500" />Net Worth</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 space-y-1 text-sm">
-              <div className="flex justify-between"><span>Assets:</span><span>₹{netWorthData.totalAssets.toLocaleString("en-IN")}</span></div>
-              <div className="flex justify-between"><span>Liabilities:</span><span>₹{netWorthData.totalLiabilities.toLocaleString("en-IN")}</span></div>
-              <div className="flex justify-between border-t pt-1 font-bold"><span>Total:</span><span>₹{netWorthValue.toLocaleString("en-IN")}</span></div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="border-l-4 border-amber-500">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><PieChart className="h-4 w-4 text-amber-500" />Net Worth Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-1 text-sm">
+            <div className="flex justify-between"><span>Total Assets:</span><span>₹{netWorthData.totalAssets.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span>Total Liabilities:</span><span>₹{netWorthData.totalLiabilities.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between border-t pt-1 font-bold"><span>Current Net Worth:</span><span>₹{netWorthValue.toLocaleString("en-IN")}</span></div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-violet-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-violet-500" />Future Value Summary</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm"><TrendingUp className="h-4 w-4 text-violet-500" />Future Value</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between"><span>Total Current Value:</span><span className="font-medium">₹{(netWorthData.totalAssets).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-            <div className="flex justify-between"><span>Average ROI:</span><span className="font-medium">{futureValueData.averageROI.toFixed(2)}%</span></div>
-            <div className="flex justify-between border-t pt-2"><span className="font-bold">Total Future Value (over {futureValueData.duration} years):</span><span className="font-bold text-green-600">₹{futureValueData.totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
+          <CardContent className="space-y-1 text-sm">
+            <div className="flex justify-between"><span>Average ROI:</span><span>{futureValueData.averageROI.toFixed(2)}%</span></div>
+            <div className="flex justify-between border-t pt-1 font-bold"><span>Total FV:</span><span className="text-green-600">₹{futureValueData.totalFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span></div>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-rose-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-rose-500" />Goals Summary</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm"><Target className="h-4 w-4 text-rose-500" />Goals</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between"><span>Total Target Future Value:</span><span className="font-medium text-green-600">₹{goalsData.totalGoalsFutureValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-            <div className="border-t pt-2 space-y-2">
-              <div className="flex justify-between"><span className="font-bold">Total Monthly SIP Required:</span><span className="font-bold text-blue-600">₹{goalsData.totalSipRequired.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-              <div className="flex justify-between"><span className="font-bold">Total Annual SIP Required:</span><span className="font-bold text-blue-600">₹{totalAnnualSip.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></div>
-            </div>
-            {(goalCoverageMessage || sipSufficiencyMessage) && (
-              <div className="border-t pt-2 space-y-1">
-                {goalCoverageMessage && (<p className={`text-sm font-semibold ${goalCoverageColor}`}>{goalCoverageMessage}</p>)}
-                {sipSufficiencyMessage && (<p className={`text-sm font-semibold ${sipSufficiencyColor}`}>{sipSufficiencyMessage}</p>)}
-              </div>
-            )}
+          <CardContent className="space-y-1 text-sm">
+            <div className="flex justify-between"><span>Total SIP Required:</span><span className="font-bold text-blue-600">₹{goalsData.totalSipRequired.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span></div>
+            {goalCoverageMessage && (<p className={`text-[10px] font-semibold mt-1 ${goalCoverageColor}`}>{goalCoverageMessage}</p>)}
           </CardContent>
         </Card>
         
         <Card className="border-l-4 border-indigo-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-indigo-500" />Insurance Summary</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm"><ShieldCheck className="h-4 w-4 text-indigo-500" />Insurance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span>Term Coverage:</span>
-              <span className="font-medium text-indigo-600">₹{insuranceData.termCoverage.toLocaleString("en-IN")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Health Coverage:</span>
-              <span className="font-medium text-indigo-600">₹{insuranceData.healthCoverage.toLocaleString("en-IN")}</span>
-            </div>
-            <div className="border-t pt-2 space-y-2">
-              <div className="flex justify-between"><span className="font-bold">Annual Term Premium:</span><span className="font-bold text-red-600">₹{insuranceData.termPremium.toLocaleString("en-IN")}</span></div>
-              <div className="flex justify-between"><span className="font-bold">Annual Health Premium:</span><span className="font-bold text-red-600">₹{insuranceData.healthPremium.toLocaleString("en-IN")}</span></div>
-            </div>
+          <CardContent className="space-y-1 text-sm">
+            <div className="flex justify-between"><span>Term Coverage:</span><span className="font-medium text-indigo-600">₹{insuranceData.termCoverage.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span>Health Coverage:</span><span className="font-medium text-indigo-600">₹{insuranceData.healthCoverage.toLocaleString("en-IN")}</span></div>
           </CardContent>
         </Card>
       </div>

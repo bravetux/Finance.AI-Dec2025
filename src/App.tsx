@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Cashflow from "./pages/Cashflow";
 import NetWorthCalculator from "./pages/NetWorthCalculator";
+import NetWorthOverview from "./pages/NetWorthOverview";
 import FutureValueCalculator from "./pages/FutureValueCalculator";
 import Goals from "./pages/Goals";
 import RetirementDashboard from "./pages/RetirementDashboard";
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="cashflow-summary" element={<CashflowSummary />} />
               <Route path="projected-cashflow" element={<ProjectedCashflow />} />
               <Route path="net-worth" element={<NetWorthCalculator />} />
+              <Route path="net-worth-overview" element={<NetWorthOverview />} />
               <Route path="real-estate" element={<RealEstate />} />
               <Route path="domestic-equity" element={<DomesticEquity />} />
               <Route path="mutual-fund-allocation" element={<MutualFundAllocation />} />

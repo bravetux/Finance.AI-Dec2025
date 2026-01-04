@@ -49,6 +49,7 @@ import {
   GraduationCap,
   ArrowRightLeft,
   Receipt,
+  History,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -79,6 +80,7 @@ const navItems = [
     icon: Wallet,
     type: 'section',
     children: [
+      { name: "NW Overview", path: "/dashboard/net-worth-overview", icon: History, type: 'link' },
       { name: "Net Worth Calculator", path: "/dashboard/net-worth", icon: Calculator, type: 'link' },
       { name: "Real Estate", path: "/dashboard/real-estate", icon: Home, type: 'link' },
       { 

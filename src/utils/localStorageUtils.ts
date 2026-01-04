@@ -58,7 +58,9 @@ interface InsurancePolicy {
 
 export interface NetWorthHistoryPoint {
   date: string; // YYYY-MM
-  value: number;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
 }
 
 // Default state objects
@@ -182,18 +184,20 @@ export const getNetWorthHistory = (): NetWorthHistoryPoint[] => {
   return safeParseJSON<NetWorthHistoryPoint[]>('netWorthHistory', []);
 };
 
-export const saveNetWorthSnapshot = (value: number) => {
+export const saveNetWorthSnapshot = (assets: number, liabilities: number) => {
   const history = getNetWorthHistory();
   const date = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+  const netWorth = assets - liabilities;
   
   const existingIndex = history.findIndex(p => p.date === date);
+  const newPoint = { date, assets, liabilities, netWorth };
+
   if (existingIndex !== -1) {
-    history[existingIndex].value = value;
+    history[existingIndex] = newPoint;
   } else {
-    history.push({ date, value });
+    history.push(newPoint);
   }
   
-  // Keep only last 24 months for performance, but you can increase this
   const sortedHistory = history.sort((a, b) => a.date.localeCompare(b.date)).slice(-24);
   localStorage.setItem('netWorthHistory', JSON.stringify(sortedHistory));
   window.dispatchEvent(new Event('storage'));

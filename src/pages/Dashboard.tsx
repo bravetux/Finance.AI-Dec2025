@@ -27,13 +27,13 @@ const Dashboard: React.FC = () => {
   const [insuranceData, setInsuranceData] = React.useState({ termPremium: 0, termCoverage: 0, healthPremium: 0, healthCoverage: 0 });
   const [history, setHistory] = React.useState<NetWorthHistoryPoint[]>([]);
 
-  const calculateCurrentNetWorth = () => {
+  const getCurrentSnapshotData = () => {
     const netWorth = getNetWorthData();
     const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
     const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
     const totalAssets = totalIlliquidAssets + totalLiquidAssets;
     const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
-    return totalAssets - totalLiabilities;
+    return { totalAssets, totalLiabilities };
   };
 
   React.useEffect(() => {
@@ -50,12 +50,8 @@ const Dashboard: React.FC = () => {
         setCashflowData({ totalAnnualIncome, totalAnnualOutflows });
 
         // Net Worth Data
-        const netWorth = getNetWorthData();
-        const totalIlliquidAssets = (netWorth.homeValue || 0) + (netWorth.otherRealEstate || 0) + (netWorth.jewellery || 0) + (netWorth.sovereignGoldBonds || 0) + (netWorth.ulipsSurrenderValue || 0) + (netWorth.epfPpfVpf || 0);
-        const totalLiquidAssets = (netWorth.fixedDeposits || 0) + (netWorth.debtFunds || 0) + (netWorth.domesticStocks || 0) + (netWorth.domesticMutualFunds || 0) + (netWorth.internationalFunds || 0) + (netWorth.smallCases || 0) + (netWorth.savingsBalance || 0) + (netWorth.preciousMetals || 0) + (netWorth.cryptocurrency || 0) + (netWorth.reits || 0);
-        const totalAssets = totalIlliquidAssets + totalLiquidAssets;
-        const totalLiabilities = (netWorth.homeLoan || 0) + (netWorth.educationLoan || 0) + (netWorth.carLoan || 0) + (netWorth.personalLoan || 0) + (netWorth.creditCardDues || 0) + (netWorth.otherLiabilities || 0);
-        setNetWorthData({ totalAssets, totalLiabilities });
+        const snapshot = getCurrentSnapshotData();
+        setNetWorthData(snapshot);
 
         // Future Value Data
         const fvSummary = getFutureValueSummaryData();
@@ -84,8 +80,8 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleRecordSnapshot = () => {
-    const currentVal = calculateCurrentNetWorth();
-    saveNetWorthSnapshot(currentVal);
+    const { totalAssets, totalLiabilities } = getCurrentSnapshotData();
+    saveNetWorthSnapshot(totalAssets, totalLiabilities);
     showSuccess("Monthly net worth snapshot recorded!");
   };
 
